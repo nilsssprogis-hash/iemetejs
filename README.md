@@ -27,3 +27,12 @@ uzbūvē APK un publicē to kā jaunu laidienu.
 - `scripts/build-www.mjs` — sagatavo `www/` ar lokāliem fontiem
 - `assets/` — ikona un sākuma ekrāns
 - `signing/debug.keystore` — parakstīšanas atslēga, lai atjauninājumi uzstādītos pāri vecajai versijai
+
+## Konti un kopīgās spēles (Firebase)
+
+- `src/cloud.js` — Firebase (e-pasts + parole, Firestore ar bezsaistes kešatmiņu); iebūvēts ar esbuild.
+- `src/firebase-config.js` — Firebase projekta konfigurācija. Kamēr tur ir `null`, lietotne strādā tikai telefonā.
+- `firestore.rules` — drošības noteikumi (jāielīmē Firebase konsolē: Firestore → Rules).
+
+Kopīga spēle: dokuments `rounds/{id}` ar `status: "live"`, spēlētāju `uid` un `memberUids`.
+Katrs metiens ir atsevišķs lauks `cells.p{spēlētājs}_h{grozs}`, tāpēc divi telefoni var ievadīt vienlaikus.
