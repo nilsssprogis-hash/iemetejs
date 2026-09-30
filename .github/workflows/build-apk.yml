@@ -30,7 +30,10 @@ jobs:
         run: npm install
 
       - name: Sagatavot lietotnes failus
-        run: node scripts/build-www.mjs
+        run: |
+          node scripts/build-www.mjs
+          npx esbuild src/cloud.js --bundle --format=iife --minify --target=es2019 --outfile=www/cloud.js
+          ls -la www
 
       - name: Izveidot Android projektu
         run: npx cap add android
