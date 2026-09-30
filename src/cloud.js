@@ -3,29 +3,32 @@
 import config from "./firebase-config.js";
 import { initializeApp } from "firebase/app";
 import {
-  initializeAuth, indexedDBLocalPersistence, onAuthStateChanged,
+  initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged,
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
   sendPasswordResetEmail, updateProfile
 } from "firebase/auth";
 import {
-  initializeFirestore, persistentLocalCache, persistentSingleTabManager,
+  initializeFirestore, persistentLocalCache, persistentSingleTabManager, memoryLocalCache,
   doc, setDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot,
   getDocs, writeBatch, arrayRemove, limit, documentId
 } from "firebase/firestore";
 
-if (config && config.apiKey) {
+if (config && config.apiKey) try {
   const app = initializeApp(config);
-  const auth = initializeAuth(app, { persistence: indexedDBLocalPersistence });
-  const db = initializeFirestore(app, {
-    localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() })
-  });
+  let auth;
+  try { auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence] }); }
+  catch (e) { window.CloudWarn = "auth: " + e.message; auth = initializeAuth(app, { persistence: inMemoryPersistence }); }
+  let db;
+  try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() }) }); }
+  catch (e) { window.CloudWarn = "firestore: " + e.message; db = initializeFirestore(app, { localCache: memoryLocalCache() }); }
 
   let first = true, resolveReady;
   const ready = new Promise(r => (resolveReady = r));
+  setTimeout(() => { if (first) { first = false; window.CloudWarn = "auth timeout"; resolveReady(auth.currentUser); } }, 8000);
   onAuthStateChanged(auth, u => {
     if (first) { first = false; resolveReady(u); }
-    else if (window.Cloud.onAuthChange) window.Cloud.onAuthChange(u);
-  });
+    else if (window.Cloud && window.Cloud.onAuthChange) window.Cloud.onAuthChange(u);
+  }, e => { window.CloudWarn = "auth: " + (e && e.message); });
 
   const noId = o => { const { id, ...rest } = o; return rest; };
 
@@ -94,4 +97,6 @@ if (config && config.apiKey) {
       return () => unsubs.forEach(u => u());
     }
   };
+} catch (e) {
+  window.CloudError = (e && (e.code || e.message)) || String(e);
 }

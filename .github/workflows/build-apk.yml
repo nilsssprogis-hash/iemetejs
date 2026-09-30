@@ -48,6 +48,8 @@ jobs:
         run: npm install
 
       - name: Sagatavot lietotnes failus
+        env:
+          APP_VERSION: 1.0.${{ github.run_number }}
         run: |
           node scripts/build-www.mjs
           npx esbuild src/cloud.js --bundle --format=iife --minify --target=es2019 --outfile=www/cloud.js

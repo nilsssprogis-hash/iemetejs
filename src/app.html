@@ -692,6 +692,7 @@ function vCourses(){
   '<div class="row">'+'<label class="btn ghost filebtn">Importēt no UDisc<input type="file" class="fileIn" aria-label="Importēt no UDisc"></label>'+(Store.dl||window.NativeStore?'<button class="btn ghost" data-act="export">Eksportēt datus</button>':'')+'<label class="btn ghost filebtn">Importēt Iemetēja failu<input type="file" class="fileIn" aria-label="Importēt Iemetēja failu"></label>'+'</div>'+
   '<details class="small"><summary>Neizdodas izvēlēties failu? Ielīmē faila saturu</summary><div class="stack" style="margin-top:8px"><textarea id="pasteIn" rows="5" placeholder="Atver CSV failu, iezīmē visu tekstu, nokopē un ielīmē šeit"></textarea><button class="btn ghost" data-act="pasteGo">Importēt ielīmēto</button></div></details>'+
   '<p class="small muted" style="margin:0">UDisc failu iegūst UDisc lietotnē: You → ☰ → Rounds → ☰ → Export to CSV.</p>'+
+  '<p class="small muted" style="margin:0">Iemetējs '+esc(window.APP_VERSION||"tīmekļa versija")+(window.CloudWarn?' · '+esc(window.CloudWarn):'')+'</p>'+
   (hasEx?(S.ui.confirmEx?'<div class="confirm"><span>Dzēst visus piemēra laukumus un raundus?</span><button class="btn danger" data-act="delExYes">Dzēst</button><button class="btn ghost" data-act="delExNo">Atcelt</button></div>':'<button class="link" data-act="delEx">Dzēst piemēra datus</button>'):'')+
   '</section>';
 }
@@ -709,7 +710,7 @@ function vUdisc(){
   '<div class="navrow"><button class="btn ghost" data-act="udCancel">Atcelt</button><button class="btn primary" data-act="udGo"'+(fresh.length?'':' disabled')+'>Importēt '+fresh.length+' '+(fresh.length===1?'raundu':'raundus')+'</button></div></section>';
 }
 function accountSection(){
-  if(!window.Cloud)return"";
+  if(!window.Cloud)return window.NativeStore&&window.APP_VERSION?'<section class="card stack"><h2>Konts un draugi</h2><div class="warn">Konti šobrīd nav pieejami: '+esc(window.CloudError||"Firebase netika ielādēts")+'. Atsūti šo tekstu izstrādātājam.</div></section>':"";
   if(S.mode!=="fb")return '<section class="card stack"><h2>Konts un draugi</h2><p class="small muted" style="margin:0">Ar kontu tavas spēles sinhronizējas mākonī, un draugi kopīgās spēles redz savā telefonā tiešraidē. Telefona dati tiks augšupielādēti kontā.</p><div class="row"><button class="btn primary" data-act="authOpen">Pierakstīties</button></div></section>';
   const fr=(S.friends||[]);
   return '<section class="card stack"><h2>Konts un draugi</h2>'+
