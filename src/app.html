@@ -1,0 +1,889 @@
+<title>Iemetējs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: mobile-first scorecard app — one column, sticky header, fixed bottom tab bar; fairway pine + basket yellow on sage paper */
+:root{
+  --bg:#e8f4ec; --surface:#ffffff; --surface-2:#d8eee0; --ink:#0f271b; --muted:#4d6a5a; --line:#cbe2d3;
+  --pine:#14904f; --pine-ink:#ffffff; --hero:#0e6a3d; --hero-ink:#ffffff; --title:#0e6a3d;
+  --accent:#ffc21a; --accent-ink:#241a00;
+  --t-green:#d3f1df; --t-yellow:#fff1c2; --t-blue:#d6ebfb; --t-coral:#ffe0d6;
+  --eagle:#1f6fd6; --birdie:#17985a; --par:#8fb4c6; --par-ink:#0f271b; --bogey:#f08420; --double:#d93d2b;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:14px; --tabh:64px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0a1811; --surface:#112419; --surface-2:#183423; --ink:#e7f5ec; --muted:#9bbaa8; --line:#23412f;
+  --pine:#2fbf71; --pine-ink:#03130a; --hero:#0f5a34; --hero-ink:#ffffff; --title:#7fe0a8;
+  --accent:#ffcc33; --accent-ink:#241a00;
+  --t-green:#153d27; --t-yellow:#3a3113; --t-blue:#132f45; --t-coral:#40221a;
+  --eagle:#5aaaf2; --birdie:#34c77e; --par:#56788a; --par-ink:#e7f5ec; --bogey:#f5a04d; --double:#f06a55; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a1811; --surface:#112419; --surface-2:#183423; --ink:#e7f5ec; --muted:#9bbaa8; --line:#23412f;
+  --pine:#2fbf71; --pine-ink:#03130a; --hero:#0f5a34; --hero-ink:#ffffff; --title:#7fe0a8;
+  --accent:#ffcc33; --accent-ink:#241a00;
+  --t-green:#153d27; --t-yellow:#3a3113; --t-blue:#132f45; --t-coral:#40221a;
+  --eagle:#5aaaf2; --birdie:#34c77e; --par:#56788a; --par-ink:#e7f5ec; --bogey:#f5a04d; --double:#f06a55; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--body);font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--display);font-variant-numeric:tabular-nums}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-in{max-width:680px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:10px}
+.brand{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.02em;line-height:1;display:flex;align-items:center;gap:8px}
+.brand svg{width:26px;height:26px}
+.sync{margin-left:auto;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.on{background:var(--birdie)}
+
+main{max-width:680px;margin:0 auto;padding-inline:16px;padding-block:18px calc(var(--tabh) + 32px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{margin:0;text-wrap:balance}
+h1{font-family:var(--display);font-weight:700;font-size:32px;line-height:1.05;letter-spacing:.01em}
+h2{font-family:var(--display);font-weight:600;font-size:22px;letter-spacing:.02em}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:10px}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.btn{border:0;border-radius:12px;padding:12px 18px;font-weight:600;background:var(--surface-2);min-height:46px}
+.btn.primary{background:var(--pine);color:var(--pine-ink)}
+.btn.accent{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.btn.danger{background:var(--double);color:#fff}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.link{background:none;border:0;padding:6px 0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;font-size:14px}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:var(--muted)}
+input[type=text],input[type=number],select{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:16px;width:100%;min-width:0}
+
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs-in{max-width:680px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);height:var(--tabh)}
+.tab{background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:600;color:var(--muted)}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+.tab[aria-current="page"]{color:var(--pine)}
+.tab[aria-current="page"] svg{stroke-width:2.3}
+
+/* score semantic chips */
+.sc{display:inline-flex;align-items:center;justify-content:center;min-width:42px;padding:2px 8px;border-radius:999px;font-family:var(--display);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;color:#fff;background:var(--par)}
+.sc.eagle{background:var(--eagle)} .sc.birdie{background:var(--birdie)} .sc.bogey{background:var(--bogey)} .sc.double{background:var(--double)}
+.sc.par{background:var(--surface-2);color:var(--ink)}
+
+/* course picker & chips */
+.pick{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px}
+.opt[aria-pressed="true"]{border-color:var(--pine);box-shadow:inset 0 0 0 1px var(--pine)}
+.opt .t{font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-size:14px;font-weight:500}
+.chip.me{background:var(--pine);border-color:var(--pine);color:var(--pine-ink)}
+.chip .x{border:0;background:none;padding:0 0 0 2px;font-size:16px;line-height:1;color:inherit;opacity:.7}
+.chip.add{border-style:dashed;color:var(--muted)}
+
+/* scoring */
+.hole-head{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:end}
+.hole-no{font-family:var(--display);font-weight:700;font-size:72px;line-height:.8;letter-spacing:-.01em}
+.hole-meta{display:flex;flex-direction:column;gap:2px;padding-bottom:4px}
+.hole-meta b{font-family:var(--display);font-size:22px;font-weight:600}
+.strip{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:thin}
+.pill{flex:0 0 auto;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-family:var(--display);font-weight:600;font-size:17px;display:flex;align-items:center;justify-content:center;position:relative}
+.pill.cur{border:2px solid var(--ink)}
+.pill.eagle{background:var(--eagle);color:#fff;border-color:transparent}
+.pill.birdie{background:var(--birdie);color:#fff;border-color:transparent}
+.pill.par{background:var(--surface-2)}
+.pill.bogey{background:var(--bogey);color:#fff;border-color:transparent}
+.pill.double{background:var(--double);color:#fff;border-color:transparent}
+.pill.cur.eagle,.pill.cur.birdie,.pill.cur.bogey,.pill.cur.double{outline:2px solid var(--ink);outline-offset:1px}
+.pl{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
+.pl-name{font-weight:600;font-size:16px;min-width:0;overflow-wrap:anywhere}
+.pl-tot{font-size:13px;color:var(--muted)}
+.stepper{display:flex;align-items:center;gap:8px}
+.stepper button{width:52px;height:52px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);font-size:26px;font-weight:500;line-height:1;display:flex;align-items:center;justify-content:center}
+.stepper .val{width:64px;height:64px;border-radius:16px;border:0;font-family:var(--display);font-size:40px;font-weight:700;display:flex;align-items:center;justify-content:center;background:var(--surface-2)}
+.stepper .val.empty{color:var(--muted);font-size:28px;border:1.5px dashed var(--line);background:transparent}
+.stepper .val.eagle{background:var(--eagle);color:#fff}.stepper .val.birdie{background:var(--birdie);color:#fff}
+.stepper .val.bogey{background:var(--bogey);color:#fff}.stepper .val.double{background:var(--double);color:#fff}
+.navrow{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}
+.warn{background:color-mix(in srgb,var(--bogey) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--bogey) 45%,var(--line));border-radius:12px;padding:10px 12px;font-size:14px}
+.confirm{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--surface-2);border-radius:12px;padding:10px 12px}
+
+/* result */
+.result{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.card{min-width:0}
+.result .tblwrap,.result .board{align-self:stretch;max-width:100%}
+.big{font-family:var(--display);font-weight:700;font-size:64px;line-height:.9}
+.pb{display:inline-flex;gap:6px;align-items:center;background:var(--accent);color:var(--accent-ink);font-weight:700;border-radius:999px;padding:4px 12px;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+
+/* history */
+.hist{display:flex;flex-direction:column;gap:10px}
+.hrow{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.hdate{font-family:var(--display);text-align:center;line-height:1;min-width:38px}
+.hdate b{display:block;font-size:24px}
+.hdate span{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.hmain{min-width:0}
+.hmain .t{font-weight:600;overflow-wrap:anywhere}
+.tag{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.detail{background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;margin-top:-12px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.tblwrap{overflow-x:auto;min-width:0}
+table.card-t{border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px;min-width:100%}
+table.card-t th,table.card-t td{padding:6px 6px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+table.card-t th:first-child,table.card-t td:first-child{text-align:left;position:sticky;left:0;background:var(--surface);padding-right:10px}
+table.card-t thead th{font-size:12px;color:var(--muted);font-weight:600}
+table.card-t td.c{font-family:var(--display);font-size:17px;font-weight:600}
+.ci{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%}
+.ci.eagle{background:var(--eagle);color:#fff;box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--eagle)}
+.ci.birdie{background:var(--birdie);color:#fff}
+.ci.bogey{background:var(--bogey);color:#fff}
+.ci.double{background:var(--double);color:#fff}
+.pcell{display:flex;flex-direction:column;line-height:1.2}
+.pcell .pr{font-family:var(--display);font-size:17px;font-weight:600;white-space:nowrap}
+.board{display:flex;flex-direction:column;gap:6px;width:100%}
+.brow{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line)}
+.brow:last-child{border-bottom:0}
+.brow .pos-n{color:var(--muted);font-family:var(--display);font-size:18px}
+.brow .nm{font-weight:600;overflow-wrap:anywhere}
+.brow .res{font-family:var(--display);font-size:24px;font-weight:700;white-space:nowrap}
+.brow .res small{font-size:17px;font-weight:500;color:var(--muted)}
+
+/* progress */
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:560px){.tiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile .v{font-family:var(--display);font-size:34px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.tile .l{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.tile .s{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-family:var(--body);font-size:12px}
+.dist{display:flex;height:18px;border-radius:6px;overflow:hidden;background:var(--surface-2)}
+.dist span{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.hrows{display:flex;flex-direction:column;gap:8px}
+.hr{display:grid;grid-template-columns:74px minmax(0,1fr) 40px;gap:8px;gap:10px;align-items:center}
+.hr-head{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:-4px}
+.hr-head span:last-child{text-align:right}
+.hn{display:flex;flex-direction:column;line-height:1.1;min-width:0}
+.hn b{font-family:var(--display);font-size:22px;font-weight:700}
+.hn span{font-size:11px;color:var(--muted);white-space:nowrap}
+.hbar{display:flex;height:28px;border-radius:7px;overflow:hidden;background:var(--surface-2)}
+.hbar span{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;min-width:0;overflow:hidden;white-space:nowrap}
+.hbar .eagle,.lg-eagle{background:var(--eagle)}.hbar .birdie,.lg-birdie{background:var(--birdie)}.hbar .par,.lg-par{background:var(--par)}
+.hbar .bogey,.lg-bogey{background:var(--bogey)}.hbar .double,.lg-double{background:var(--double)}
+.av{text-align:right;font-family:var(--display);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
+.stat-t{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.stat-t th,.stat-t td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.stat-t th:first-child,.stat-t td:first-child{text-align:left;white-space:normal}
+.stat-t thead th{font-size:12px;color:var(--muted);font-weight:600}
+.pos{color:var(--birdie);font-weight:600}.neg{color:var(--bogey);font-weight:600}
+
+/* course editor */
+.pars{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.parc{background:var(--surface-2);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;align-items:center}
+.parc .h{font-size:12px;color:var(--muted);font-weight:600}
+.parc .ps{display:flex;align-items:center;gap:6px}
+.parc .ps button{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:17px;line-height:1;padding:0}
+.parc .ps b{font-family:var(--display);font-size:24px;width:20px;text-align:center}
+.parc input{padding:5px 6px;font-size:14px;text-align:center}
+.clist{display:flex;flex-direction:column;gap:8px}
+.crow{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.crow .t{font-weight:600;overflow-wrap:anywhere}
+.empty{display:flex;flex-direction:column;gap:12px;align-items:flex-start;padding:22px 18px;border:1.5px dashed var(--line);border-radius:var(--r);background:var(--surface)}
+.empty svg{width:56px;height:56px;color:var(--pine)}
+.filebtn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center}
+.filebtn input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+.filebtn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+textarea{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:13px/1.4 ui-monospace,monospace;width:100%;min-width:0;resize:vertical;color:var(--ink)}
+details summary{cursor:pointer;color:var(--muted);padding:4px 0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tabh) + 14px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;z-index:9;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){.stepper .val{transition:background .15s}.toast{animation:up .2s ease-out}@keyframes up{from{transform:translate(-50%,8px);opacity:0}}}
+
+/* ---- colour layer ---- */
+.combo{display:flex;flex-direction:column;gap:8px}
+.combo-btn{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left;background:var(--t-green);border:1.5px solid var(--pine);border-radius:12px;padding:12px 14px;min-height:60px}
+.combo-btn .t{font-weight:700;font-size:16px}
+.chev{flex:0 0 auto;width:10px;height:10px;border-right:2.5px solid var(--pine);border-bottom:2.5px solid var(--pine);transform:rotate(45deg) translateY(-3px);transition:transform .15s}
+.combo.open .chev{transform:rotate(-135deg) translateY(-3px)}
+.combo-panel{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;box-shadow:0 6px 18px rgba(10,60,30,.12)}
+.combo-panel input[type=search]{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:16px;width:100%;min-width:0;color:var(--ink)}
+.combo-panel .pick{max-height:300px;overflow-y:auto}
+.lp{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+.seg{display:grid;grid-template-columns:1.25fr 1fr 1fr;border:1.5px solid var(--eagle);border-radius:12px;overflow:hidden;background:var(--surface)}
+.seg>*{min-width:0;border-right:1.5px solid color-mix(in srgb,var(--eagle) 35%,var(--line))}
+.seg>*:last-child{border-right:0}
+.segb{border:0;background:transparent;color:var(--eagle);padding:11px 6px;font-weight:700;font-size:15px;white-space:nowrap}
+.segb[aria-pressed="true"],.segs.on{background:var(--eagle);color:#fff}
+.segs{display:block;position:relative;color:var(--eagle)}
+.segs select{appearance:none;-webkit-appearance:none;border:0;border-radius:0;background:transparent;color:inherit;font-weight:700;font-size:15px;width:100%;height:100%;padding:11px 26px 11px 10px;text-align:center;cursor:pointer}
+.segs::after{content:"";position:absolute;right:11px;top:50%;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.segs select option{color:var(--ink);background:var(--surface)}
+.top{background:var(--hero);color:var(--hero-ink);border-bottom:0;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.brand svg{color:var(--accent)}
+.sync{color:color-mix(in srgb,var(--hero-ink) 80%,transparent)}
+.dot{background:color-mix(in srgb,var(--hero-ink) 55%,transparent)} .dot.on{background:var(--accent)}
+h1{color:var(--title)}
+.eyebrow{color:var(--pine)}
+.btn{background:var(--t-green);color:var(--ink)}
+.btn.ghost{background:var(--surface);border:1.5px solid var(--pine);color:var(--pine)}
+.btn.primary{background:var(--pine);color:var(--pine-ink);box-shadow:0 3px 0 color-mix(in srgb,var(--pine) 60%,#000)}
+.btn.accent{background:var(--accent);color:var(--accent-ink);box-shadow:0 3px 0 color-mix(in srgb,var(--accent) 65%,#000)}
+.btn.danger{background:var(--double);color:#fff}
+.card{box-shadow:0 1px 3px rgba(10,60,30,.06)}
+.tab[aria-current="page"]{color:var(--pine)}
+.tab[aria-current="page"] svg{background:var(--t-green);border-radius:999px;width:54px;height:30px;padding:4px 16px}
+.opt[aria-pressed="true"]{background:var(--t-green);border-color:var(--pine)}
+.chip.add{border-color:var(--pine);color:var(--pine);background:var(--surface)}
+.empty{background:var(--t-yellow);border-color:color-mix(in srgb,var(--accent) 60%,var(--line))}
+.hole-head{background:var(--hero);color:var(--hero-ink);border-radius:18px;padding:16px 18px;position:relative;overflow:hidden}
+.hole-head::after{content:"";position:absolute;right:-34px;top:-34px;width:120px;height:120px;border-radius:50%;border:14px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+.hole-head .eyebrow{color:color-mix(in srgb,var(--hero-ink) 75%,transparent)}
+.hole-meta b{color:var(--accent)}
+.pill.par{background:var(--par);color:var(--par-ink);border-color:transparent}
+.stepper button{background:var(--t-green);color:var(--pine);border-color:transparent;font-weight:700}
+.stepper .val.par{background:var(--par);color:var(--par-ink)}
+.pl{border-left:5px solid var(--pine)}
+.tile{border:0}
+.tile:nth-child(1){background:var(--t-green)} .tile:nth-child(1) .v{color:var(--pine)}
+.tile:nth-child(2){background:var(--t-yellow)} .tile:nth-child(2) .v{color:color-mix(in srgb,var(--accent) 40%,var(--ink))}
+.tile:nth-child(3){background:var(--t-blue)} .tile:nth-child(3) .v{color:var(--eagle)}
+.tile:nth-child(4){background:var(--t-coral)} .tile:nth-child(4) .v{color:var(--double)}
+.hdate{background:var(--t-yellow);border-radius:10px;padding:6px 4px}
+.hdate span{color:var(--ink)}
+.sc.par{background:var(--par);color:var(--par-ink)}
+.hbar .par{color:var(--par-ink)}
+.result{background:linear-gradient(180deg,var(--t-green),var(--surface) 55%)}
+.res.r-eagle{color:var(--eagle)} .res.r-birdie{color:var(--birdie)} .res.r-bogey{color:var(--bogey)} .res.r-double{color:var(--double)}
+.crow{border-left:5px solid var(--accent)}
+</style>
+
+<header class="top"><div class="top-in">
+  <div class="brand"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 9h18"/><path d="M8 9l3 10M13 9l1.5 10M19 9l-1.5 10M24 9l-3 10"/><path d="M9 19h14l-2 5H11z"/><path d="M16 24v5M11 29h10"/><path d="M16 4v5"/></svg>Iemetējs</div>
+  <div class="sync" id="sync"><span class="dot"></span><span>Ielādē…</span></div>
+</div></header>
+
+<main id="view" aria-live="polite">
+  <div class="card stack"><div class="eyebrow">Ielādē</div><h1>Tavi raundi, laukumi un progress</h1><p class="muted">Sagatavo datus…</p></div>
+</main>
+
+<nav class="tabs" aria-label="Sadaļas"><div class="tabs-in" id="tabs"></div></nav>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const mkId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const sum=a=>a.reduce((x,y)=>x+(+y||0),0);
+const rel=d=>d===0?"E":(d>0?"+"+d:"−"+Math.abs(d));
+const relF=d=>{const r=Math.round(d*10)/10;return r===0?"E":(r>0?"+":"−")+Math.abs(r).toFixed(1).replace(/\.0$/,"");};
+const cls=(s,p)=>{if(s==null||p==null)return"";const d=s-p;return d<=-2?"eagle":d===-1?"birdie":d===0?"par":d===1?"bogey":"double";};
+const NO=(c,i)=>c.nos?c.nos[i]:i+1;
+const HN=(r,i)=>r.holeNos?r.holeNos[i]:i+1;
+const MON=["jan","feb","mar","apr","mai","jūn","jūl","aug","sep","okt","nov","dec"];
+const fmtDate=iso=>{const d=new Date(iso);return d.getDate()+". "+MON[d.getMonth()]+" "+d.getFullYear();};
+
+/* ---------- state ---------- */
+const S={mode:"loading",tab:"play",courses:[],rounds:[],current:null,profile:{myName:"Es"},ui:{sel:{},newPlayers:null}};
+try{const t=localStorage.getItem("kedes.tab");if(t)S.tab=t;}catch(e){}
+
+/* ---------- storage: Claude db (per-person, private) with browser fallback ---------- */
+const LKEY="kedes.data.v1";
+const Store={
+  base:null,dl:null,chain:Promise.resolve(),curTimer:null,
+  async init(){
+    let db=null,user=null,uid=null;
+    try{ if(window.claude&&claude.use){[db,user]=await Promise.all([claude.use("db"),claude.use("user")]);} }catch(e){}
+    if(db&&user){try{uid=await user.id();}catch(e){}}
+    if(db&&uid){
+      this.base=db.doc("data/users/"+uid+"/profile");
+      S.mode="cloud";
+      try{
+        const [p,c]=await Promise.all([this.base.get(),this.base.collection("state").doc("current").get()]);
+        if(p.exists)S.profile=Object.assign({},S.profile,p.data());
+        if(c.exists&&c.data().round)S.current=clone(c.data().round);
+      }catch(e){}
+      const onErr=()=>{S.mode="offline";render();};
+      this.base.collection("courses").onSnapshot(s=>{S.courses=s.docs.map(d=>Object.assign({},d.data(),{id:d.id}));render();},onErr);
+      this.base.collection("rounds").onSnapshot(s=>{S.rounds=s.docs.map(d=>Object.assign({},d.data(),{id:d.id}));render();},onErr);
+    }else{
+      S.mode="local";this.loadLocal();
+      if(!S.courses.length&&!S.rounds.length&&window.NativeStore){try{const j=await NativeStore.load();if(j){localStorage.setItem(LKEY,j);this.loadLocal();}}catch(e){}}
+    }
+    render();
+    try{ if(window.claude&&claude.use)this.dl=await claude.use("downloads"); }catch(e){}
+    render();
+  },
+  loadLocal(){try{const d=JSON.parse(localStorage.getItem(LKEY)||"null");if(d){S.courses=d.courses||[];S.rounds=d.rounds||[];S.current=d.current||null;if(d.profile)S.profile=d.profile;}}catch(e){}},
+  saveLocal(){const j=JSON.stringify({courses:S.courses,rounds:S.rounds,current:S.current,profile:S.profile});try{localStorage.setItem(LKEY,j);}catch(e){}if(window.NativeStore)NativeStore.save(j);},
+  q(fn){this.chain=this.chain.then(fn).catch(e=>{console.warn(e);toast(e&&e.code==="quota_exceeded"?"Krātuve ir pilna — izdzēs vecus datus":"Neizdevās saglabāt. Mēģini vēlreiz.");});return this.chain;},
+  upsert(list,item){const i=list.findIndex(x=>x.id===item.id);if(i>=0)list[i]=item;else list.push(item);},
+  saveCourse(c){this.upsert(S.courses,c);if(S.mode==="cloud")return this.q(()=>this.base.collection("courses").doc(c.id).set(clone(c)));this.saveLocal();return Promise.resolve();},
+  delCourse(id){S.courses=S.courses.filter(c=>c.id!==id);if(S.mode==="cloud")return this.q(()=>this.base.collection("courses").doc(id).delete());this.saveLocal();return Promise.resolve();},
+  saveRound(r){this.upsert(S.rounds,r);if(S.mode==="cloud")return this.q(()=>this.base.collection("rounds").doc(r.id).set(clone(r)));this.saveLocal();return Promise.resolve();},
+  delRound(id){S.rounds=S.rounds.filter(r=>r.id!==id);if(S.mode==="cloud")return this.q(()=>this.base.collection("rounds").doc(id).delete());this.saveLocal();return Promise.resolve();},
+  saveProfile(){if(S.mode==="cloud")return this.q(()=>this.base.set(clone(S.profile)));this.saveLocal();return Promise.resolve();},
+  saveCurrent(now){
+    clearTimeout(this.curTimer);
+    const go=()=>{if(S.mode==="cloud"){const snap=S.current?clone(S.current):null;this.q(()=>snap?this.base.collection("state").doc("current").set({round:snap}):this.base.collection("state").doc("current").delete());}else this.saveLocal();};
+    if(now)go();else this.curTimer=setTimeout(go,700);
+  }
+};
+
+/* ---------- derived data ---------- */
+const meOf=r=>r.players.find(p=>p.isMe)||r.players[0];
+const roundPar=r=>sum(r.pars);
+const doneRounds=()=>S.rounds.filter(r=>r.players&&r.players.length).sort((a,b)=>a.date<b.date?-1:1);
+function friendNames(){const hid=(S.profile.hiddenFriends||[]);const seen=new Map(hid.map(h=>[h,null]));doneRounds().slice().reverse().forEach(r=>r.players.forEach(p=>{if(!p.isMe&&!seen.has(p.name.toLowerCase()))seen.set(p.name.toLowerCase(),p.name);}));return[...seen.values()].filter(Boolean);}
+const fold=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+function courseOpt(c,sel){const pb=bestOn(c.id);
+  return '<button class="opt" data-act="selCourse" data-v="'+c.id+'" aria-pressed="'+(c.id===sel)+'"><span><span class="t">'+esc(c.name)+'</span><br><span class="muted small">'+c.holes.length+' grozi · par '+sum(c.holes.map(h=>h.par))+(c.location?' · '+esc(c.location):'')+'</span></span>'+(pb!=null?'<span class="small muted">rekords <b class="num" style="font-size:17px;color:var(--ink)">'+rel(pb)+'</b></span>':'')+'</button>';}
+function courseListHTML(sel){
+  const q=fold(S.ui.courseQ).trim();
+  const list=S.courses.slice().sort((a,b)=>playsOf(b.id)-playsOf(a.id)||a.name.localeCompare(b.name,"lv"))
+    .filter(c=>!q||q.split(/\s+/).every(w=>fold(c.name+" "+(c.location||"")).includes(w)));
+  return list.length?list.map(c=>courseOpt(c,sel)).join(""):'<p class="muted small" style="margin:4px 2px">Neviens laukums neatbilst “'+esc(S.ui.courseQ)+'”.</p>';
+}
+
+/* ---------- toast ---------- */
+let tt;function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2600);}
+
+/* ---------- icons ---------- */
+const IC={
+  play:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/></svg>',
+  hist:'<svg viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+  prog:'<svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M5 15l4-4 3.5 3 6.5-7"/><path d="M15 7h4v4"/></svg>',
+  course:'<svg viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 4l11 4-11 4"/><path d="M3 21h11"/></svg>',
+  basket:'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 9h18"/><path d="M8 9l3 10M13 9l1.5 10M19 9l-1.5 10M24 9l-3 10"/><path d="M9 19h14l-2 5H11z"/><path d="M16 24v5M11 29h10"/><path d="M16 4v5"/></svg>'
+};
+const TABS=[["play","Spēle",IC.play],["hist","Vēsture",IC.hist],["prog","Progress",IC.prog],["course","Laukumi",IC.course]];
+
+/* ---------- render ---------- */
+function render(){
+  const sy=$("#sync");
+  const lab={loading:"Ielādē…",cloud:"Saglabāts kontā",local:window.NativeStore?"Saglabāts telefonā":"Tikai šajā pārlūkā",offline:"Savienojums pārtrūka"}[S.mode];
+  sy.innerHTML='<span class="dot'+(S.mode==="cloud"?" on":"")+'"></span><span>'+lab+'</span>';
+  $("#tabs").innerHTML=TABS.map(([k,l,i])=>'<button class="tab" data-act="tab" data-v="'+k+'"'+(S.tab===k?' aria-current="page"':'')+'>'+i+'<span>'+l+'</span></button>').join("");
+  if(S.mode==="loading")return;
+  const v=$("#view");
+  const f={play:vPlay,hist:vHist,prog:vProg,course:vCourses}[S.tab]||vPlay;
+  const focusId=document.activeElement&&document.activeElement.id;
+  v.innerHTML=f();
+  if(focusId){const el=document.getElementById(focusId);if(el&&el.tagName==="INPUT"&&el.type==="text"){el.focus();const n=el.value.length;try{el.setSelectionRange(n,n);}catch(e){}}}
+  const cur=v.querySelector(".pill.cur");if(cur)cur.scrollIntoView({block:"nearest",inline:"center"});
+}
+
+function emptyBox(title,text,btns){return '<div class="empty">'+IC.basket+'<h2>'+title+'</h2><p class="muted" style="margin:0">'+text+'</p><div class="row">'+btns+'</div></div>';}
+
+/* ---- PLAY ---- */
+function vPlay(){
+  if(S.ui.finished){return vFinished(S.rounds.find(r=>r.id===S.ui.finished));}
+  if(S.current)return vScoring();
+  if(!S.courses.length){
+    return '<div class="stack"><div class="eyebrow">Jauna spēle</div><h1>Sāc ar laukumu</h1></div>'+
+      emptyBox("Vēl nav neviena laukuma","Pievieno laukumu, kurā spēlē — nosaukumu, grozu skaitu un katra groza par. Pēc tam vari sākt skaitīt metienus.",
+      '<button class="btn primary" data-act="newCourse">Pievienot laukumu</button>'+'<label class="btn ghost filebtn">Importēt no UDisc<input type="file" class="fileIn" aria-label="Importēt no UDisc"></label>'+'<button class="btn ghost" data-act="loadExample">Ielādēt piemēra datus</button>');
+  }
+  const sel=S.ui.sel.course&&S.courses.find(c=>c.id===S.ui.sel.course)?S.ui.sel.course:(S.ui.sel.course=lastCourseId());
+  if(!S.ui.newPlayers)S.ui.newPlayers=[{name:S.profile.myName||"Es",isMe:true}];
+  const pls=S.ui.newPlayers;
+  const friends=friendNames().filter(n=>!pls.some(p=>p.name.toLowerCase()===n.toLowerCase())).slice(0,8);
+  const csel=S.courses.find(c=>c.id===sel);
+  const open=!!S.ui.pickOpen;
+  return '<div class="stack"><div class="eyebrow">Jauna spēle</div><h1>Kur šodien met?</h1></div>'+
+  '<section class="stack"><h2>Laukums</h2><div class="combo'+(open?' open':'')+'">'+
+  '<button class="combo-btn" data-act="togglePick" aria-expanded="'+open+'"><span><span class="t">'+(csel?esc(csel.name):'Izvēlies laukumu')+'</span>'+(csel?'<br><span class="muted small">'+csel.holes.length+' grozi · par '+sum(csel.holes.map(h=>h.par))+(csel.location?' · '+esc(csel.location):'')+'</span>':'')+'</span><span class="chev" aria-hidden="true"></span></button>'+
+  (open?'<div class="combo-panel"><input type="search" id="courseQ" placeholder="Meklēt laukumu…" autocomplete="off" value="'+esc(S.ui.courseQ||"")+'"><div class="pick" id="courseList">'+courseListHTML(sel)+'</div></div>':'')+
+  '</div>'+startSel(sel)+'</section>'+
+  '<section class="stack"><h2>Spēlētāji</h2><div class="chips">'+pls.map((p,i)=>'<span class="chip'+(p.isMe?' me':'')+'">'+esc(p.name)+(p.isMe?'':' <button class="x" data-act="rmPlayer" data-v="'+i+'" aria-label="Noņemt '+esc(p.name)+'">×</button>')+'</span>').join("")+'</div>'+
+  (friends.length?'<div class="chips">'+friends.map(n=>'<button class="chip add lp" data-act="addFriend" data-v="'+esc(n)+'">+ '+esc(n)+'</button>').join("")+'</div><p class="small muted" style="margin:0">Turi nospiestu vārdu, lai to noņemtu no ieteikumiem.</p>':'')+
+  (S.ui.hideAsk?'<div class="confirm"><span>Noņemt “'+esc(S.ui.hideAsk)+'” no ieteiktajiem spēlētājiem? Vecie rezultāti paliks.</span><button class="btn danger" data-act="hideYes">Noņemt</button><button class="btn ghost" data-act="hideNo">Atcelt</button></div>':'')+
+  '<form class="row" data-form="addPlayer" style="flex-wrap:nowrap"><input type="text" id="newPlayer" placeholder="Pievienot spēlētāju" maxlength="30" autocomplete="off"><button class="btn ghost" type="submit">Pievienot</button></form></section>'+
+  '<button class="btn primary wide" data-act="start" style="min-height:54px;font-size:17px">Sākt spēli</button>';
+}
+function startSel(id){
+  const c=S.courses.find(x=>x.id===id);if(!c)return"";
+  const k=S.ui.sel.start||0;
+  return '<label class="f" for="startHole">Sākt no groza<select id="startHole" data-change="startHole">'+c.holes.map((h,i)=>'<option value="'+i+'"'+(i===k?' selected':'')+'>'+(i+1)+'. grozs'+(i===0?' (parastais sākums)':'')+' · par '+h.par+'</option>').join("")+'</select></label>';
+}
+function lastCourseId(){const r=doneRounds().slice(-1)[0];if(r&&S.courses.some(c=>c.id===r.courseId))return r.courseId;return S.courses[0]&&S.courses[0].id;}
+const playsOf=id=>S.rounds.filter(r=>r.courseId===id).length;
+function bestOn(id){const rs=S.rounds.filter(r=>r.courseId===id);if(!rs.length)return null;return Math.min(...rs.map(r=>sum(meOf(r).scores)-roundPar(r)));}
+
+function vScoring(){
+  const c=S.current,h=c.hole,par=c.pars[h],dist=c.dists&&c.dists[h];
+  const me=c.players.find(p=>p.isMe)||c.players[0];
+  const played=c.pars.length;
+  const strip=c.pars.map((p,i)=>'<button class="pill '+cls(me.scores[i],p)+(i===h?' cur':'')+'" data-act="goHole" data-v="'+i+'" aria-label="Grozs '+NO(c,i)+'">'+NO(c,i)+'</button>').join("");
+  const ed=!!c.editOf;
+  const rows=c.players.map((p,pi)=>{
+    const s=p.scores[h];const thru=p.scores.filter(x=>x!=null).length;
+    const d=sum(p.scores.map((x,i)=>x==null?0:x-c.pars[i]));
+    return '<div class="card pl"><div><div class="pl-name">'+esc(p.name)+'</div><div class="pl-tot">'+(thru?'<b class="num" style="font-size:18px;color:var(--ink)">'+rel(d)+'</b> pēc '+thru+' groz'+(thru===1?'a':'iem'):'vēl nav metienu')+'</div></div>'+
+    '<div class="stepper"><button data-act="dec" data-v="'+pi+'" aria-label="Mazāk metienu">−</button><button class="val '+(s==null?'par':cls(s,par))+'" data-act="setPar" data-v="'+pi+'" aria-label="Metieni: '+(s==null?par+' (par, apstiprinās ar Nākamais grozs)':s)+'">'+(s==null?par:s)+'</button><button data-act="inc" data-v="'+pi+'" aria-label="Vairāk metienu">+</button></div></div>';
+  }).join("");
+  const last=h===played-1;
+  const miss=S.ui.missing;
+  return '<div class="spread"><div class="eyebrow">'+(ed?'Labo raundu · ':'')+esc(c.courseName)+'</div><span class="small muted">'+(h+1)+'. no '+played+'</span></div>'+
+  '<div class="hole-head"><div class="hole-no">'+NO(c,h)+'</div><div class="hole-meta"><span class="eyebrow">Grozs</span><span>Par <b>'+par+'</b>'+(dist?' · <b>'+dist+'</b> m':'')+'</span></div></div>'+
+  '<div class="strip" role="list">'+strip+'</div>'+
+  '<div class="stack">'+rows+'</div>'+
+  (miss?'<div class="warn">Nav ievadīti metieni: '+esc(miss)+'. Aizpildi tos, tad varēsi pabeigt.</div>':'')+
+  '<div class="navrow"><button class="btn ghost" data-act="prevHole"'+(h===0?' disabled':'')+'>← Atpakaļ</button>'+
+  (last?'<button class="btn accent" data-act="finish">'+(ed?'Saglabāt izmaiņas':'Pabeigt spēli')+'</button>':'<button class="btn primary" data-act="nextHole">Nākamais grozs →</button>')+'</div>'+
+  (ed?(S.ui.confirmAbort?'<div class="confirm"><span>Atmest izmaiņas? Saglabātais raunds paliks nemainīts.</span><button class="btn danger" data-act="abortYes">Atmest</button><button class="btn ghost" data-act="abortNo">Turpināt labot</button></div>':'<div class="row" style="justify-content:space-between"><button class="link" data-act="finish">Saglabāt izmaiņas tagad</button><button class="link" data-act="abort">Atcelt labošanu</button></div>'):
+  S.ui.confirmAbort?'<div class="confirm"><span>Dzēst šo spēli bez saglabāšanas?</span><button class="btn danger" data-act="abortYes">Dzēst</button><button class="btn ghost" data-act="abortNo">Atcelt</button></div>':
+  '<div class="row" style="justify-content:space-between"><button class="link" data-act="finishEarly">Pabeigt tagad</button><button class="link" data-act="abort">Pārtraukt spēli</button></div>');
+}
+
+function vFinished(r){
+  if(!r){S.ui.finished=null;return vPlay();}
+  const me=meOf(r),tot=sum(me.scores),d=tot-roundPar(r);
+  const prev=S.rounds.filter(x=>x.courseId===r.courseId&&x.id!==r.id&&x.pars.length===r.pars.length);
+  const prevBest=prev.length?Math.min(...prev.map(x=>sum(meOf(x).scores)-roundPar(x))):null;
+  const isPB=prev.length>0&&d<prevBest;
+  const b=me.scores.filter((s,i)=>s-r.pars[i]<0).length;
+  return '<div class="card result"><div class="eyebrow">Spēle pabeigta · '+esc(r.courseName)+'</div>'+
+  (isPB?'<span class="pb">Jauns rekords šajā laukumā</span>':'')+
+  '<div class="row" style="align-items:flex-end;gap:16px"><span class="big">'+rel(d)+'</span><span class="muted">'+tot+' metieni · par '+roundPar(r)+'<br>'+b+' '+(b===1?'birdijs':'birdiji')+(prevBest!=null&&!isPB?' · rekords '+rel(prevBest):'')+'</span></div>'+
+  (r.players.length>1?board(r):'')+scoreTable(r)+
+  '<div class="row"><button class="btn primary" data-act="newGame">Jauna spēle</button><button class="btn ghost" data-act="tab" data-v="prog">Skatīt progresu</button></div></div>';
+}
+
+function scoreTable(r){
+  const P=roundPar(r);
+  let h='<div class="tblwrap"><table class="card-t"><thead><tr><th>Spēlētājs</th>'+r.pars.map((_,i)=>'<th>'+HN(r,i)+'</th>').join("")+'</tr></thead><tbody>';
+  h+='<tr><td class="muted"><div class="pcell"><span>Par</span><span class="pr">'+P+'</span></div></td>'+r.pars.map(p=>'<td class="muted">'+p+'</td>').join("")+'</tr>';
+  r.players.forEach(p=>{const t=sum(p.scores);h+='<tr><td><div class="pcell"><b>'+esc(p.name)+'</b><span class="pr">'+rel(t-P)+' <span class="muted">('+t+')</span></span></div></td>'+p.scores.map((s,i)=>{const k=cls(s,r.pars[i]);return '<td class="c">'+(s==null?'–':(k&&k!=="par"?'<span class="ci '+k+'">'+s+'</span>':s))+'</td>';}).join("")+'</tr>';});
+  return h+'</tbody></table></div>';
+}
+function board(r){
+  const P=roundPar(r);
+  const ps=r.players.map(p=>({p,t:sum(p.scores)})).sort((a,b)=>a.t-b.t);
+  let place=0,prev=null;
+  return '<div class="board">'+ps.map((x,i)=>{if(x.t!==prev){place=i+1;prev=x.t;}return '<div class="brow"><span class="pos-n">'+place+'.</span><span class="nm">'+esc(x.p.name)+'</span><span class="res r-'+relCls(x.t-P)+'">'+rel(x.t-P)+' <small>('+x.t+')</small></span></div>';}).join("")+'</div>';
+}
+
+/* ---- HISTORY ---- */
+function vHist(){
+  const rs=doneRounds().slice().reverse();
+  if(!rs.length)return '<div class="stack"><div class="eyebrow">Vēsture</div><h1>Nospēlētie raundi</h1></div>'+emptyBox("Vēl nav nospēlētu raundu","Kad pabeigsi pirmo spēli, tā parādīsies šeit ar pilnu rezultātu karti.",'<button class="btn primary" data-act="tab" data-v="play">Sākt spēli</button>');
+  let lastM="";
+  return '<div class="stack"><div class="eyebrow">Vēsture</div><h1>'+rs.length+' '+(rs.length%10===1&&rs.length%100!==11?'raunds':'raundi')+'</h1></div><div class="hist">'+rs.map(r=>{
+    const d=new Date(r.date),m=d.getFullYear()+"-"+d.getMonth();let head="";
+    if(m!==lastM){lastM=m;head='<div class="eyebrow" style="margin-top:6px">'+["Janvāris","Februāris","Marts","Aprīlis","Maijs","Jūnijs","Jūlijs","Augusts","Septembris","Oktobris","Novembris","Decembris"][d.getMonth()]+' '+d.getFullYear()+'</div>';}
+    const me=meOf(r),dd=sum(me.scores)-roundPar(r),open=S.ui.openRound===r.id;
+    const others=r.players.filter(p=>p!==me).map(p=>p.name);
+    return head+'<button class="hrow" data-act="openRound" data-v="'+r.id+'" aria-expanded="'+open+'"><span class="hdate"><b>'+d.getDate()+'</b><span>'+MON[d.getMonth()]+'</span></span><span class="hmain"><span class="t">'+esc(r.courseName)+'</span> '+(r.example?'<span class="tag">piemērs</span>':'')+'<br><span class="small muted">'+sum(me.scores)+' metieni'+(others.length?' · ar '+esc(others.join(", ")):'')+'</span></span><span class="sc '+relCls(dd)+'">'+rel(dd)+'</span></button>'+
+    (open?'<div class="detail">'+scoreTable(r)+(S.ui.confirmDel===r.id?'<div class="confirm"><span>Dzēst šo raundu no vēstures?</span><button class="btn danger" data-act="delRoundYes" data-v="'+r.id+'">Dzēst</button><button class="btn ghost" data-act="delRoundNo">Atcelt</button></div>':'<div class="spread"><span class="small muted">'+fmtDate(r.date)+'</span><span class="row" style="gap:16px"><button class="btn ghost" data-act="editRound" data-v="'+r.id+'">Labot</button><button class="link" data-act="delRound" data-v="'+r.id+'">Dzēst</button></span></div>')+'</div>':'');
+  }).join("")+'</div>';
+}
+const relCls=d=>d<=-2?"eagle":d<0?"birdie":d===0?"par":d<=3?"bogey":"double";
+
+/* ---- PROGRESS ---- */
+function vProg(){
+  const all=doneRounds();
+  if(!all.length)return '<div class="stack"><div class="eyebrow">Progress</div><h1>Tava statistika</h1></div>'+emptyBox("Statistikai vajag spēles","Pēc katra pabeigta raunda šeit parādīsies vidējais rezultāts, rekordi, birdiju skaits un līkne, kas rāda, kā tu uzlabojies.",'<button class="btn primary" data-act="tab" data-v="play">Sākt spēli</button>'+(S.courses.length?'':'<button class="btn ghost" data-act="loadExample">Ielādēt piemēra datus</button>'));
+  if(S.ui.progCourse==null){const m={};all.forEach(r=>m[r.courseId]=(m[r.courseId]||0)+1);const ids=Object.keys(m);S.ui.progCourse=ids.length>1?ids.sort((a,b)=>m[b]-m[a])[0]:"";}
+  const cid=S.ui.progCourse&&all.some(r=>r.courseId===S.ui.progCourse)?S.ui.progCourse:"";
+  const rsC=cid?all.filter(r=>r.courseId===cid):all;
+  const years=[...new Set(rsC.map(r=>new Date(r.date).getFullYear()))].sort((a,b)=>b-a);
+  const nOpts=[10,20,30,40,50];
+  let per=S.ui.period||"all";
+  if(per[0]==="n"&&!nOpts.includes(+per.slice(1)))per="all";
+  if(per[0]==="y"&&!years.includes(+per.slice(1)))per="all";
+  const applyPer=list=>per==="all"?list:per[0]==="n"?list.slice(-(+per.slice(1))):list.filter(r=>new Date(r.date).getFullYear()===+per.slice(1));
+  const rs=applyPer(rsC);
+  const perLbl=per==="all"?"Visas spēles":per[0]==="n"?"Pēdējās "+per.slice(1)+" spēles":per.slice(1)+". gads";
+  const perBar='<div class="seg" role="group" aria-label="Periods">'+
+    '<label class="segs'+(per[0]==="n"?' on':'')+'"><select id="perN" data-change="period" aria-label="Pēdējās spēles"><option value=""'+(per[0]!=="n"?' selected':'')+' disabled>Pēdējās…</option>'+nOpts.map(n=>'<option value="n'+n+'"'+(per==="n"+n?' selected':'')+'>Pēdējās '+n+'</option>').join("")+'</select></label>'+
+    '<label class="segs'+(per[0]==="y"?' on':'')+'"><select id="perY" data-change="period" aria-label="Gads"><option value=""'+(per[0]!=="y"?' selected':'')+' disabled>Gads</option>'+years.map(y=>'<option value="y'+y+'"'+(per==="y"+y?' selected':'')+'>'+y+'</option>').join("")+'</select></label>'+
+    segBtn("all","Visas ("+rsC.length+")",per)+'</div>';
+  const ds=rs.map(r=>sum(meOf(r).scores)-roundPar(r));
+  const holesN=sum(rs.map(r=>r.pars.length));
+  const avg=sum(ds)/ds.length, perHole=sum(ds)/holesN;
+  const bi=ds.indexOf(Math.min(...ds)),best=rs[bi];
+  const cnt={eagle:0,birdie:0,par:0,bogey:0,double:0};
+  rs.forEach(r=>meOf(r).scores.forEach((s,i)=>cnt[cls(s,r.pars[i])]++));
+  const birdies=cnt.birdie+cnt.eagle;
+  const mixed=new Set(rs.map(r=>r.pars.length)).size>1;
+  const cds=mixed?ds.map((d,i)=>Math.round(d/rs[i].pars.length*18*10)/10):ds;
+  const opts=[...new Map(all.map(r=>[r.courseId,r.courseName])).entries()];
+  const half=Math.floor(ds.length/2);
+  let trend="";
+  if(ds.length>=4){const a=sum(rs.slice(0,half).map((r,i)=>ds[i]/r.pars.length))/sum(rs.slice(0,half).map(()=>1));const b=sum(rs.slice(half).map((r,i)=>ds[half+i]/r.pars.length))/(ds.length-half);const diff=(b-a)*(cid?rs[0].pars.length:18);
+    trend='<span class="'+(diff<0?'pos':diff>0?'neg':'')+'">'+(diff<0?'▲ Uzlabojies par '+Math.abs(diff).toFixed(1)+' metieniem':diff>0?'▼ Pasliktinājies par '+diff.toFixed(1)+' metieniem':'Stabils')+'</span> <span class="muted">— salīdzinot pēdējās '+(ds.length-half)+' spēles ar pirmajām'+(cid?'':' (uz 18 groziem)')+'</span>';}
+  return '<div class="stack"><div class="eyebrow">Progress · '+esc(S.profile.myName||"Es")+'</div><h1>'+(cid?esc(opts.find(o=>o[0]===cid)[1]):'Visi laukumi')+'</h1>'+
+  perBar+'<label class="f" for="progCourse">Laukums<select id="progCourse" data-change="progCourse"><option value="">Visi laukumi</option>'+opts.map(([id,n])=>'<option value="'+id+'"'+(id===cid?' selected':'')+'>'+esc(n)+'</option>').join("")+'</select></label></div>'+
+  '<div class="tiles">'+
+   tile("Spēles",rs.length,perLbl+" · "+holesN+" grozi")+
+   tile("Vidēji",relF(avg),"pret par · "+relF(perHole)+" uz grozu")+
+   tile("Labākais",rel(ds[bi]),esc(best.courseName)+", "+fmtDate(best.date))+
+   tile("Birdiji",birdies,(birdies/rs.length).toFixed(1)+" vienā spēlē")+
+  '</div>'+
+  '<section class="card stack chart"><div class="spread"><h2>Rezultāts pret par</h2><span class="small muted">augstāk = labāk</span></div>'+(mixed?'<p class="small muted" style="margin:0">Laukumiem ir atšķirīgs grozu skaits, tāpēc rezultāti pārrēķināti uz 18 groziem.</p>':'')+chartSVG(rs.slice(-50),cds.slice(-50))+
+  '<div class="legend"><span><i style="background:var(--pine)"></i>Spēle</span><span><i style="background:var(--accent)"></i>Vidējais pēdējām 5</span></div>'+(trend?'<div class="small">'+trend+'</div>':'')+'</section>'+
+  '<section class="card stack"><h2>Metienu sadalījums</h2>'+distBar(cnt)+'</section>'+
+  (cid?holeTable(rs):courseTable(applyPer(all)));
+}
+function segBtn(v,l,cur){return '<button class="segb" data-act="period" data-v="'+v+'" aria-pressed="'+(v===cur)+'">'+l+'</button>';}
+function tile(l,v,s){return '<div class="tile"><span class="l">'+l+'</span><span class="v">'+v+'</span><span class="s">'+s+'</span></div>';}
+function distBar(c){
+  const tot=sum(Object.values(c))||1;
+  const L=[["eagle","Eagle vai labāk"],["birdie","Birdie"],["par","Par"],["bogey","Bogey"],["double","Double+"]];
+  const col={eagle:"var(--eagle)",birdie:"var(--birdie)",par:"var(--par)",bogey:"var(--bogey)",double:"var(--double)"};
+  return '<div class="dist">'+L.map(([k])=>c[k]?'<span style="width:'+(c[k]/tot*100)+'%;background:'+col[k]+'" title="'+k+'"></span>':'').join("")+'</div><div class="legend">'+L.map(([k,n])=>'<span><i style="background:'+col[k]+'"></i>'+n+' <b class="num" style="font-size:16px">'+Math.round(c[k]/tot*100)+'%</b> <span class="muted">('+c[k]+')</span></span>').join("")+'</div>';
+}
+function chartSVG(rs,ds){
+  const W=600,H=230,L=40,R=16,T=14,B=30,w=W-L-R,h=H-T-B,n=ds.length;
+  let lo=Math.min(0,...ds),hi=Math.max(0,...ds);if(hi-lo<4){hi+=2;lo-=2;}
+  const step=Math.max(1,Math.ceil((hi-lo)/5));lo=Math.floor(lo/step)*step;hi=Math.ceil(hi/step)*step;
+  const y=v=>T+(v-lo)/(hi-lo)*h; /* lower score (better) sits higher */
+  const x=i=>n===1?L+w/2:L+i*w/(n-1);
+  let g="";
+  for(let v=lo;v<=hi;v+=step){g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="var(--line)" stroke-width="'+(v===0?1.6:1)+'"'+(v===0?'':' stroke-dasharray="3 4"')+'/><text x="'+(L-8)+'" y="'+(y(v)+4)+'" text-anchor="end">'+rel(v)+'</text>';}
+  const ma=ds.map((_,i)=>{const s=ds.slice(Math.max(0,i-4),i+1);return sum(s)/s.length;});
+  const pts=ds.map((v,i)=>x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ");
+  const mpts=ma.map((v,i)=>x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ");
+  const area="M"+x(0)+","+y(hi)+" L"+pts.split(" ").join(" L")+" L"+x(n-1)+","+y(hi)+"Z";
+  const dots=ds.map((v,i)=>'<circle cx="'+x(i)+'" cy="'+y(v)+'" r="'+(i===n-1?6:4)+'" fill="var(--'+relCls(Math.round(v))+')" stroke="var(--surface)" stroke-width="2"><title>'+esc(rs[i].courseName)+', '+fmtDate(rs[i].date)+': '+relF(v)+'</title></circle>').join("");
+  const lx=x(n-1),ly=y(ds[n-1]);
+  const lbl='<text x="'+(lx-10)+'" y="'+(ly<T+22?ly+20:ly-12)+'" text-anchor="end" style="fill:var(--ink);font-family:var(--display);font-size:17px;font-weight:700">'+relF(ds[n-1])+'</text>';
+  const xl='<text x="'+x(0)+'" y="'+(H-8)+'" text-anchor="'+(n===1?'middle':'start')+'">'+fmtDate(rs[0].date)+'</text>'+(n>1?'<text x="'+x(n-1)+'" y="'+(H-8)+'" text-anchor="end">'+fmtDate(rs[n-1].date)+'</text>':'');
+  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Rezultāts pret par pa spēlēm">'+g+'<path d="'+area+'" fill="var(--pine)" opacity=".08"/>'+(n>1?'<polyline points="'+mpts+'" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="6 4" stroke-linecap="round"/><polyline points="'+pts+'" fill="none" stroke="var(--pine)" stroke-width="2.5" stroke-linejoin="round"/>':'')+dots+lbl+xl+'</svg>';
+}
+const DIST=[["eagle","Eagle vai labāk"],["birdie","Birdie"],["par","Par"],["bogey","Bogey"],["double","Double+"]];
+function holeTable(rs){
+  const n=Math.max(...rs.map(r=>r.holeNos?Math.max(...r.holeNos):r.pars.length));
+  const course=S.courses.find(c=>c.id===rs[0].courseId);
+  let rows="";
+  for(let i=0;i<n;i++){
+    const sc=[];let par=null;const c={eagle:0,birdie:0,par:0,bogey:0,double:0};
+    rs.forEach(r=>{const j=r.holeNos?r.holeNos.indexOf(i+1):i;if(j>=0&&r.pars[j]!=null){par=r.pars[j];const s=meOf(r).scores[j];if(s!=null){sc.push(s-r.pars[j]);c[cls(s,r.pars[j])]++;}}});
+    if(!sc.length)continue;
+    const a=sum(sc)/sc.length,t=sc.length;
+    const dist=course&&course.holes[i]&&course.holes[i].dist;
+    rows+='<div class="hr"><div class="hn"><b>'+(i+1)+'</b><span>par '+par+(dist?' · '+dist+' m':'')+'</span></div>'+
+      '<div class="hbar" role="img" aria-label="Grozs '+(i+1)+': '+DIST.filter(([k])=>c[k]).map(([k,l])=>l+' '+Math.round(c[k]/t*100)+'%').join(", ")+'">'+
+      DIST.map(([k,l])=>c[k]?'<span class="'+k+'" style="width:'+(c[k]/t*100)+'%" title="'+l+': '+Math.round(c[k]/t*100)+'%">'+(c[k]/t>=0.14?Math.round(c[k]/t*100)+'%':'')+'</span>':'').join("")+'</div>'+
+      '<div class="av '+(a<0?'pos':a>0.5?'neg':'')+'">'+(par+a).toFixed(1)+'</div></div>';
+  }
+  return '<section class="card stack"><div class="spread"><h2>Pa groziem</h2><span class="small muted">'+rs.length+' '+(rs.length===1?'spēle':'spēles')+'</span></div>'+
+    '<div class="legend">'+DIST.map(([k,l])=>'<span><i class="lg-'+k+'"></i>'+l+'</span>').join("")+'</div>'+
+    '<div class="hr hr-head"><span>Grozs</span><span>Rezultātu sadalījums</span><span>Vidēji</span></div>'+
+    '<div class="hrows">'+rows+'</div></section>';
+}
+function courseTable(all){
+  const m=new Map();all.forEach(r=>{if(!m.has(r.courseId))m.set(r.courseId,{n:r.courseName,d:[]});m.get(r.courseId).d.push(sum(meOf(r).scores)-roundPar(r));});
+  return '<section class="card stack"><h2>Pa laukumiem</h2><div class="tblwrap"><table class="stat-t"><thead><tr><th>Laukums</th><th>Spēles</th><th>Rekords</th><th>Vidēji</th></tr></thead><tbody>'+[...m.entries()].sort((a,b)=>b[1].d.length-a[1].d.length).map(([id,o])=>'<tr><td><button class="link" style="color:var(--ink);padding:0" data-act="progTo" data-v="'+id+'">'+esc(o.n)+'</button></td><td>'+o.d.length+'</td><td><b>'+rel(Math.min(...o.d))+'</b></td><td>'+relF(sum(o.d)/o.d.length)+'</td></tr>').join("")+'</tbody></table></div></section>';
+}
+
+/* ---- COURSES ---- */
+function vCourses(){
+  if(S.ui.edit)return vEdit();
+  if(S.ui.udisc)return vUdisc();
+  const list=S.courses.slice().sort((a,b)=>a.name.localeCompare(b.name,"lv"));
+  const hasEx=S.courses.some(c=>c.example)||S.rounds.some(r=>r.example);
+  return '<div class="stack"><div class="eyebrow">Laukumi</div><h1>Tavi laukumi</h1></div>'+
+  (list.length?'<div class="clist">'+list.map(c=>'<div class="crow"><div><div class="t">'+esc(c.name)+(c.example?' <span class="tag">piemērs</span>':'')+'</div><div class="small muted">'+c.holes.length+' grozi · par '+sum(c.holes.map(h=>h.par))+(c.location?' · '+esc(c.location):'')+' · '+playsOf(c.id)+' spēles</div></div><button class="btn ghost" data-act="editCourse" data-v="'+c.id+'">Labot</button></div>').join("")+'</div>':emptyBox("Nav laukumu","Pievieno pirmo laukumu, importē savus raundus no UDisc vai ielādē piemēra datus.",'<label class="btn primary filebtn">Importēt no UDisc<input type="file" class="fileIn" aria-label="Importēt no UDisc"></label><button class="btn ghost" data-act="loadExample">Ielādēt piemēra datus</button>'))+
+  '<button class="btn primary wide" data-act="newCourse">+ Jauns laukums</button>'+
+  '<section class="card stack"><h2>Iestatījumi</h2>'+
+  '<form class="stack" data-form="myName"><label class="f" for="myName">Tavs vārds rezultātu kartē<input type="text" id="myName" maxlength="30" value="'+esc(S.profile.myName||"Es")+'"></label><button class="btn ghost" type="submit">Saglabāt vārdu</button></form>'+
+  '<p class="small muted" style="margin:0">'+(S.mode==="cloud"?"Dati glabājas tavā Claude kontā un ir redzami tikai tev — tie ir pieejami no jebkuras ierīces, kurā atver šo lietotni.":window.NativeStore?"Dati glabājas šajā telefonā un darbojas bez interneta. Ik pa laikam eksportē rezerves kopiju, piemēram, uz Google Drive vai e-pastu.":"Dati glabājas tikai šajā pārlūkā. Izmanto eksportu, lai saglabātu rezerves kopiju.")+'</p>'+
+  '<div class="row">'+'<label class="btn ghost filebtn">Importēt no UDisc<input type="file" class="fileIn" aria-label="Importēt no UDisc"></label>'+(Store.dl||window.NativeStore?'<button class="btn ghost" data-act="export">Eksportēt datus</button>':'')+'<label class="btn ghost filebtn">Importēt Iemetēja failu<input type="file" class="fileIn" aria-label="Importēt Iemetēja failu"></label>'+'</div>'+
+  '<details class="small"><summary>Neizdodas izvēlēties failu? Ielīmē faila saturu</summary><div class="stack" style="margin-top:8px"><textarea id="pasteIn" rows="5" placeholder="Atver CSV failu, iezīmē visu tekstu, nokopē un ielīmē šeit"></textarea><button class="btn ghost" data-act="pasteGo">Importēt ielīmēto</button></div></details>'+
+  '<p class="small muted" style="margin:0">UDisc failu iegūst UDisc lietotnē: You → ☰ → Rounds → ☰ → Export to CSV.</p>'+
+  (hasEx?(S.ui.confirmEx?'<div class="confirm"><span>Dzēst visus piemēra laukumus un raundus?</span><button class="btn danger" data-act="delExYes">Dzēst</button><button class="btn ghost" data-act="delExNo">Atcelt</button></div>':'<button class="link" data-act="delEx">Dzēst piemēra datus</button>'):'')+
+  '</section>';
+}
+function vUdisc(){
+  const u=S.ui.udisc,rs=u.rounds;
+  const fresh=rs.filter(r=>!S.rounds.some(x=>x.id===r.id));
+  const courses=[...new Set(rs.map(r=>r.courseName))];
+  const ds=rs.map(r=>r.date).sort();
+  return '<div class="stack"><div class="eyebrow">Imports no UDisc</div><h1>'+rs.length+' '+(rs.length===1?'raunds':'raundi')+' failā</h1></div>'+
+  '<section class="card stack"><div class="small muted">'+fmtDate(ds[0])+(ds.length>1?' – '+fmtDate(ds[ds.length-1]):'')+'</div>'+
+  '<div>'+courses.map(c=>'<div><b>'+esc(c)+'</b> <span class="muted small">· '+rs.filter(r=>r.courseName===c).length+' raundi</span></div>').join("")+'</div>'+
+  (fresh.length<rs.length?'<div class="warn">'+(rs.length-fresh.length)+' no tiem jau ir importēti — tos izlaidīšu.</div>':'')+
+  '<h2>Kurš no spēlētājiem esi tu?</h2><p class="small muted" style="margin:0">Tavi rezultāti veidos progresa statistiku. Pārējie spēlētāji saglabāsies rezultātu kartēs.</p>'+
+  '<div class="chips">'+u.names.map(n=>'<button class="chip'+(n===u.me?' me':'')+'" data-act="udMe" data-v="'+esc(n)+'" aria-pressed="'+(n===u.me)+'">'+esc(n)+'</button>').join("")+'</div>'+
+  '<div class="navrow"><button class="btn ghost" data-act="udCancel">Atcelt</button><button class="btn primary" data-act="udGo"'+(fresh.length?'':' disabled')+'>Importēt '+fresh.length+' '+(fresh.length===1?'raundu':'raundus')+'</button></div></section>';
+}
+function vEdit(){
+  const e=S.ui.edit,isNew=!S.courses.some(c=>c.id===e.id);
+  const tp=sum(e.holes.map(h=>h.par));
+  return '<div class="stack"><div class="eyebrow">'+(isNew?'Jauns laukums':'Labot laukumu')+'</div><h1>'+(esc(e.name)||'Laukuma nosaukums')+'</h1></div>'+
+  '<form class="stack" data-form="saveCourse">'+
+  '<label class="f" for="cName">Nosaukums<input type="text" id="cName" data-bind="name" value="'+esc(e.name)+'" placeholder="piem., Siguldas disku golfa parks" maxlength="60" required></label>'+
+  '<label class="f" for="cLoc">Vieta (nav obligāti)<input type="text" id="cLoc" data-bind="location" value="'+esc(e.location||"")+'" placeholder="piem., Sigulda" maxlength="60"></label>'+
+  '<div class="spread"><div><div class="eyebrow">Grozi</div><div class="num" style="font-size:22px;font-weight:600">'+e.holes.length+' grozi · par '+tp+'</div></div><div class="row"><button type="button" class="btn ghost" data-act="holes" data-v="-1" aria-label="Noņemt grozu">−</button><button type="button" class="btn ghost" data-act="holes" data-v="1" aria-label="Pievienot grozu">+</button></div></div>'+
+  '<div class="row"><button type="button" class="chip" data-act="holesSet" data-v="9">9 grozi</button><button type="button" class="chip" data-act="holesSet" data-v="18">18 grozi</button><button type="button" class="chip" data-act="allPar3">Visiem par 3</button></div>'+
+  '<div class="pars">'+e.holes.map((h,i)=>'<div class="parc"><span class="h">Grozs '+(i+1)+'</span><div class="ps"><button type="button" data-act="par" data-v="'+i+'" data-d="-1" aria-label="Samazināt par">−</button><b>'+h.par+'</b><button type="button" data-act="par" data-v="'+i+'" data-d="1" aria-label="Palielināt par">+</button></div><input type="number" inputmode="numeric" min="0" max="999" id="dist'+i+'" data-dist="'+i+'" value="'+(h.dist||"")+'" placeholder="m" aria-label="Groza '+(i+1)+' garums metros"></div>').join("")+'</div>'+
+  (S.ui.editErr?'<div class="warn">'+esc(S.ui.editErr)+'</div>':'')+
+  '<div class="navrow"><button type="button" class="btn ghost" data-act="cancelEdit">Atcelt</button><button class="btn primary" type="submit">Saglabāt laukumu</button></div></form>'+
+  (!isNew?(S.ui.confirmDelC?'<div class="confirm"><span>Dzēst laukumu? Nospēlētie raundi vēsturē paliks.</span><button class="btn danger" data-act="delCourseYes">Dzēst</button><button class="btn ghost" data-act="delCourseNo">Atcelt</button></div>':'<button class="link" data-act="delCourse">Dzēst laukumu</button>'):'');
+}
+
+/* ---------- actions ---------- */
+function setTab(t){S.tab=t;S.ui.confirmAbort=S.ui.confirmDel=S.ui.confirmEx=false;S.ui.missing=null;if(t!=="play")S.ui.finished=null;try{localStorage.setItem("kedes.tab",t);}catch(e){}render();window.scrollTo(0,0);}
+function startGame(){
+  const c=S.courses.find(x=>x.id===S.ui.sel.course);if(!c){toast("Izvēlies laukumu");return;}
+  const pls=S.ui.newPlayers||[{name:S.profile.myName||"Es",isMe:true}];
+  const n=c.holes.length,k=Math.min(Math.max(0,S.ui.sel.start||0),n-1);
+  const order=c.holes.map((_,i)=>(i+k)%n);
+  S.current={id:mkId(),courseId:c.id,courseName:c.name,pars:order.map(i=>c.holes[i].par),dists:order.map(i=>c.holes[i].dist||0),nos:k?order.map(i=>i+1):null,players:pls.map(p=>({name:p.name,isMe:!!p.isMe,scores:c.holes.map(()=>null)})),hole:0,startedAt:new Date().toISOString()};
+  S.ui.sel.start=0;
+  S.ui.newPlayers=null;Store.saveCurrent(true);render();window.scrollTo(0,0);
+}
+function missingHoles(){const c=S.current,m=[];c.pars.forEach((_,i)=>{if(c.players.some(p=>p.scores[i]==null))m.push(i);});return m;}
+function confirmHole(){const c=S.current;if(!c)return;const h=c.hole;c.players.forEach(p=>{if(p.scores[h]==null)p.scores[h]=c.pars[h];});}
+function finish(early){
+  confirmHole();
+  const c=S.current;const n=c.pars.length;
+  let miss=missingHoles(),k=n;
+  if(early){ /* keep holes played in a row from the start */
+    k=0;while(k<n&&!miss.includes(k))k++;
+    miss=[];
+  }
+  if(miss.length){S.ui.missing=miss.map(i=>NO(c,i)).join(", ");S.current.hole=miss[0];Store.saveCurrent();render();return;}
+  let idx=[...Array(k).keys()];
+  if(c.nos)idx.sort((a,b)=>c.nos[a]-c.nos[b]); /* store holes in course order */
+  let nos=c.nos?idx.map(i=>c.nos[i]):null;
+  if(nos&&nos.every((v,i)=>v===i+1))nos=null;
+  if(!nos&&k<n&&!c.nos)nos=null;
+  const r=Object.assign({},c.keep||{},{id:c.editOf||c.id,courseId:c.courseId,courseName:c.courseName,pars:idx.map(i=>c.pars[i]),date:c.editDate||new Date().toISOString(),
+    players:c.players.map(p=>({name:p.name,isMe:p.isMe,scores:idx.map(i=>p.scores[i])}))});
+  if(nos)r.holeNos=nos;else delete r.holeNos;
+  const wasEdit=!!c.editOf;
+  S.current=null;S.ui.missing=null;S.ui.confirmAbort=false;
+  Store.saveRound(r);Store.saveCurrent(true);
+  if(wasEdit){S.ui.openRound=r.id;setTab("hist");toast("Izmaiņas saglabātas");return;}
+  S.ui.finished=r.id;render();window.scrollTo(0,0);
+}
+function editRound(id){
+  if(S.current){toast("Vispirms pabeidz vai pārtrauc aktīvo spēli");return;}
+  const r=S.rounds.find(x=>x.id===id);if(!r)return;
+  const course=S.courses.find(x=>x.id===r.courseId);
+  const keep={};["source","example"].forEach(f=>{if(r[f]!=null)keep[f]=r[f];});
+  S.current={id:mkId(),editOf:r.id,editDate:r.date,keep,courseId:r.courseId,courseName:r.courseName,pars:r.pars.slice(),
+    dists:r.pars.map((_,i)=>{const h=course&&course.holes[HN(r,i)-1];return h?h.dist||0:0;}),
+    nos:r.holeNos?r.holeNos.slice():null,players:clone(r.players),hole:0,startedAt:new Date().toISOString()};
+  S.ui.finished=null;Store.saveCurrent(true);setTab("play");
+}
+function blankCourse(n){return{id:mkId(),name:"",location:"",holes:Array.from({length:n},()=>({par:3,dist:0})),createdAt:new Date().toISOString()};}
+
+document.addEventListener("click",ev=>{
+  const b=ev.target.closest("[data-act]");if(!b)return;
+  const a=b.dataset.act,v=b.dataset.v;
+  const c=S.current;
+  switch(a){
+    case"tab":setTab(v);break;
+    case"selCourse":S.ui.sel.course=v;S.ui.sel.start=0;S.ui.pickOpen=false;S.ui.courseQ="";render();break;
+    case"togglePick":S.ui.pickOpen=!S.ui.pickOpen;S.ui.courseQ="";render();if(S.ui.pickOpen){const q=$("#courseQ");if(q)q.focus();}break;
+    case"hideYes":{const n=S.ui.hideAsk;S.profile.hiddenFriends=[...new Set([...(S.profile.hiddenFriends||[]),n.toLowerCase()])];S.ui.hideAsk=null;Store.saveProfile();render();toast("“"+n+"” noņemts no ieteikumiem");break;}
+    case"hideNo":S.ui.hideAsk=null;render();break;
+    case"rmPlayer":S.ui.newPlayers.splice(+v,1);render();break;
+    case"addFriend":if(lpFired){lpFired=false;break;}S.ui.newPlayers.push({name:v,isMe:false});render();break;
+    case"start":startGame();break;
+    case"newGame":S.ui.finished=null;render();break;
+    case"goHole":c.hole=+v;S.ui.missing=null;Store.saveCurrent();render();break;
+    case"prevHole":if(c.hole>0)c.hole--;Store.saveCurrent();render();window.scrollTo(0,0);break;
+    case"nextHole":confirmHole();S.ui.missing=null;if(c.hole<c.pars.length-1)c.hole++;Store.saveCurrent();render();window.scrollTo(0,0);break;
+    case"setPar":case"inc":case"dec":{const p=c.players[+v],h=c.hole,par=c.pars[h];let s=p.scores[h];
+      if(a==="setPar")s=s==null?par:s; else if(a==="inc")s=s==null?par+1:Math.min(20,s+1); else s=s==null?Math.max(1,par-1):Math.max(1,s-1);
+      p.scores[h]=s;Store.saveCurrent();render();break;}
+    case"finish":finish(false);break;
+    case"finishEarly":finish(true);break;
+    case"abort":S.ui.confirmAbort=true;render();break;
+    case"abortNo":S.ui.confirmAbort=false;render();break;
+    case"abortYes":if(S.current&&S.current.editOf){S.current=null;S.ui.confirmAbort=false;Store.saveCurrent(true);S.tab="hist";render();toast("Labošana atcelta");break;}S.current=null;S.ui.confirmAbort=false;S.ui.missing=null;Store.saveCurrent(true);render();toast("Spēle pārtraukta");break;
+    case"openRound":S.ui.openRound=S.ui.openRound===v?null:v;S.ui.confirmDel=false;render();break;
+    case"delRound":S.ui.confirmDel=v;render();break;
+    case"editRound":editRound(v);break;
+    case"delRoundNo":S.ui.confirmDel=false;render();break;
+    case"delRoundYes":Store.delRound(v);S.ui.confirmDel=false;S.ui.openRound=null;render();toast("Raunds izdzēsts");break;
+    case"period":S.ui.period=v;render();break;
+    case"progTo":S.ui.progCourse=v;render();window.scrollTo(0,0);break;
+    case"newCourse":S.tab="course";S.ui.edit=blankCourse(9);S.ui.editErr=null;render();window.scrollTo(0,0);break;
+    case"editCourse":S.ui.edit=clone(S.courses.find(x=>x.id===v));S.ui.editErr=null;S.ui.confirmDelC=false;render();window.scrollTo(0,0);break;
+    case"cancelEdit":S.ui.edit=null;render();break;
+    case"holes":{const e=S.ui.edit;if(+v>0&&e.holes.length<36)e.holes.push({par:3,dist:0});if(+v<0&&e.holes.length>1)e.holes.pop();render();break;}
+    case"holesSet":{const e=S.ui.edit,n=+v;while(e.holes.length<n)e.holes.push({par:3,dist:0});e.holes.length=n;render();break;}
+    case"allPar3":S.ui.edit.holes.forEach(h=>h.par=3);render();break;
+    case"par":{const h=S.ui.edit.holes[+v];h.par=Math.min(7,Math.max(2,h.par+ +b.dataset.d));render();break;}
+    case"delCourse":S.ui.confirmDelC=true;render();break;
+    case"delCourseNo":S.ui.confirmDelC=false;render();break;
+    case"delCourseYes":Store.delCourse(S.ui.edit.id);S.ui.edit=null;S.ui.confirmDelC=false;render();toast("Laukums izdzēsts");break;
+    case"loadExample":loadExample();break;
+    case"delEx":S.ui.confirmEx=true;render();break;
+    case"delExNo":S.ui.confirmEx=false;render();break;
+    case"delExYes":S.courses.filter(x=>x.example).forEach(x=>Store.delCourse(x.id));S.rounds.filter(x=>x.example).forEach(x=>Store.delRound(x.id));S.ui.confirmEx=false;render();toast("Piemēra dati izdzēsti");break;
+    case"export":doExport();break;
+    case"pasteGo":{const t=$("#pasteIn").value.trim();if(!t){toast("Vispirms ielīmē faila saturu");break;}handleImportText(t);break;}
+    case"udMe":S.ui.udisc.me=v;render();break;
+    case"udCancel":S.ui.udisc=null;render();break;
+    case"udGo":doUdImport();break;
+  }
+});
+document.addEventListener("input",ev=>{
+  const t=ev.target;
+  if(t.id==="courseQ"){S.ui.courseQ=t.value;const l=$("#courseList");if(l)l.innerHTML=courseListHTML(S.ui.sel.course);return;}
+  if(t.dataset.bind&&S.ui.edit){S.ui.edit[t.dataset.bind]=t.value;}
+  if(t.dataset.dist!=null&&S.ui.edit){S.ui.edit.holes[+t.dataset.dist].dist=Math.max(0,Math.min(999,parseInt(t.value,10)||0));}
+});
+document.addEventListener("change",ev=>{
+  const t=ev.target;
+  if(t.dataset.change==="progCourse"){S.ui.progCourse=t.value;render();}
+  if(t.dataset.change==="period"&&t.value){S.ui.period=t.value;render();}
+  if(t.dataset.change==="startHole"){S.ui.sel.start=+t.value;}
+  if(t.classList.contains("fileIn")&&t.files&&t.files[0]){const f=t.files[0];doImport(f);t.value="";}
+});
+document.addEventListener("submit",ev=>{
+  const f=ev.target;ev.preventDefault();
+  if(f.dataset.form==="addPlayer"){const i=$("#newPlayer"),n=i.value.trim();if(!n)return;
+    if(S.ui.newPlayers.some(p=>p.name.toLowerCase()===n.toLowerCase())){toast("Šāds spēlētājs jau ir");return;}
+    if(S.ui.newPlayers.length>=8){toast("Līdz 8 spēlētājiem vienā spēlē");return;}
+    S.ui.newPlayers.push({name:n,isMe:false});i.value="";
+    if((S.profile.hiddenFriends||[]).includes(n.toLowerCase())){S.profile.hiddenFriends=S.profile.hiddenFriends.filter(h=>h!==n.toLowerCase());Store.saveProfile();}
+    render();}
+  if(f.dataset.form==="myName"){const n=$("#myName").value.trim()||"Es";S.profile.myName=n;if(S.ui.newPlayers){const m=S.ui.newPlayers.find(p=>p.isMe);if(m)m.name=n;}Store.saveProfile();toast("Vārds saglabāts");render();}
+  if(f.dataset.form==="saveCourse"){const e=S.ui.edit;e.name=(e.name||"").trim();if(!e.name){S.ui.editErr="Ieraksti laukuma nosaukumu.";render();return;}
+    e.location=(e.location||"").trim();Store.saveCourse(clone(e));S.ui.sel.course=e.id;S.ui.edit=null;render();toast("Laukums saglabāts");window.scrollTo(0,0);}
+});
+
+/* ---------- long press on suggested players ---------- */
+let lpTimer=null,lpFired=false,lpXY=null;
+document.addEventListener("pointerdown",ev=>{const b=ev.target.closest(".lp");if(!b)return;lpFired=false;lpXY=[ev.clientX,ev.clientY];clearTimeout(lpTimer);
+  lpTimer=setTimeout(()=>{lpFired=true;S.ui.hideAsk=b.dataset.v;render();if(navigator.vibrate)try{navigator.vibrate(30);}catch(e){}},550);});
+["pointerup","pointercancel","pointerleave"].forEach(t=>document.addEventListener(t,()=>clearTimeout(lpTimer),true));
+document.addEventListener("pointermove",ev=>{if(lpXY&&Math.hypot(ev.clientX-lpXY[0],ev.clientY-lpXY[1])>10)clearTimeout(lpTimer);});
+document.addEventListener("contextmenu",ev=>{if(ev.target.closest(".lp"))ev.preventDefault();});
+document.addEventListener("click",()=>{setTimeout(()=>{lpFired=false;},0);},true);
+
+/* ---------- export / import ---------- */
+async function doExport(){
+  if(!Store.dl&&!window.NativeStore)return;
+  const data=JSON.stringify({app:"Iemetējs",version:1,exportedAt:new Date().toISOString(),profile:S.profile,courses:S.courses,rounds:S.rounds},null,2);
+  const fname="iemetejs-dati-"+new Date().toISOString().slice(0,10)+".json";
+  if(!Store.dl){try{await NativeStore.exportFile(fname,data);}catch(e){if(!/cancel/i.test(String(e&&e.message||e)))toast("Eksports neizdevās");}return;}
+  try{await Store.dl.save({filename:"iemetejs-dati-"+new Date().toISOString().slice(0,10)+".json",data});}catch(e){if(e&&e.code!=="cancelled"&&e.code!=="declined")toast("Eksports neizdevās");}
+}
+function doImport(file){
+  const rd=new FileReader();
+  rd.onload=()=>handleImportText(String(rd.result));
+  rd.onerror=()=>toast("Neizdevās nolasīt failu");
+  rd.readAsText(file);
+}
+async function handleImportText(raw){
+    const txt=String(raw).replace(/^\uFEFF/,"");
+    if(/^\s*"?PlayerName"?,/.test(txt)){
+      const rs=parseUDisc(txt);
+      if(!rs||!rs.length){toast("Failā neatradu nevienu UDisc raundu");return;}
+      const freq={};rs.forEach(r=>r.players.forEach(p=>freq[p.name]=(freq[p.name]||0)+1));
+      const names=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]);
+      const my=(S.profile.myName||"").toLowerCase();
+      S.ui.udisc={rounds:rs,names,me:names.find(n=>n.toLowerCase()===my)||names[0]};
+      S.ui.edit=null;setTab("course");return;
+    }
+    try{const d=JSON.parse(txt);if(!Array.isArray(d.courses)||!Array.isArray(d.rounds))throw 0;
+      let nc=0,nr=0;
+      for(const c of d.courses){if(c&&c.id&&Array.isArray(c.holes)){await Store.saveCourse(c);nc++;}}
+      for(const r of d.rounds){if(r&&r.id&&Array.isArray(r.pars)&&Array.isArray(r.players)){await Store.saveRound(r);nr++;}}
+      render();toast("Importēti "+nc+" laukumi un "+nr+" raundi");
+    }catch(e){toast("Neatpazinu failu. Vajag UDisc CSV eksportu vai Iemetēja eksporta failu.");}
+}
+
+/* ---------- UDisc CSV import ---------- */
+function parseCSV(t){const rows=[];let row=[],f="",q=false;
+  for(let i=0;i<t.length;i++){const ch=t[i];
+    if(q){if(ch==='"'){if(t[i+1]==='"'){f+='"';i++;}else q=false;}else f+=ch;}
+    else if(ch==='"')q=true;else if(ch===','){row.push(f);f="";}
+    else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f="";}
+    else f+=ch;}
+  if(f||row.length){row.push(f);rows.push(row);}
+  return rows.filter(r=>r.some(x=>x.trim()));}
+function udDate(s){const m=/^(\d{4}-\d{2}-\d{2})[ T](\d{2}):?(\d{2})(?::?\d{2})?\s*([+-]\d{2}):?(\d{2})?$/.exec((s||"").trim());
+  if(m){const d=new Date(m[1]+"T"+m[2]+":"+m[3]+":00"+m[4]+":"+(m[5]||"00"));if(!isNaN(d))return d.toISOString();}
+  const d=new Date(s);return isNaN(d)?new Date().toISOString():d.toISOString();}
+const slug=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60)||"x";
+function parseUDisc(text){
+  const rows=parseCSV(text);if(!rows.length)return null;
+  const h=rows[0].map(x=>x.trim());const ix=n=>h.indexOf(n);
+  const iP=ix("PlayerName"),iC=ix("CourseName"),iL=ix("LayoutName"),iS=ix("StartDate");
+  if(iP<0||iC<0||iS<0)return null;
+  const holeCols=h.map((x,i)=>/^Hole\d+$/i.test(x)?i:-1).filter(i=>i>=0);
+  const groups=new Map();
+  rows.slice(1).forEach(r=>{
+    const course=(r[iC]||"").trim(),layout=iL>=0?(r[iL]||"").trim():"",start=(r[iS]||"").trim(),name=(r[iP]||"").trim();
+    if(!course||!name)return;
+    const key=course+"|"+layout+"|"+start;
+    if(!groups.has(key))groups.set(key,{course,layout,start,par:null,players:[]});
+    const g=groups.get(key);
+    const vals=holeCols.map(i=>{const v=(r[i]||"").trim();const n=parseInt(v,10);return v===""||isNaN(n)?null:n;});
+    if(name==="Par")g.par=vals;else g.players.push({name,scores:vals});
+  });
+  const out=[];
+  groups.forEach(g=>{
+    if(!g.par||!g.players.length)return;
+    let n=g.par.length;while(n>0&&g.par[n-1]==null)n--;if(!n)return;
+    const key="ud-"+slug(g.course+"-"+g.layout);
+    out.push({id:key+"-"+slug(g.start),courseKey:key,courseName:g.course+(g.layout&&!/^main$/i.test(g.layout)?" · "+g.layout:""),
+      pars:g.par.slice(0,n).map(p=>p||3),date:udDate(g.start),players:g.players.map(p=>({name:p.name,scores:p.scores.slice(0,n)}))});
+  });
+  return out.sort((a,b)=>a.date<b.date?-1:1);
+}
+async function doUdImport(){
+  const u=S.ui.udisc;if(!u)return;
+  const fresh=u.rounds.filter(r=>!S.rounds.some(x=>x.id===r.id));
+  const courseFor={};
+  for(const r of u.rounds.slice().reverse()){ /* newest round defines the course pars */
+    if(courseFor[r.courseKey])continue;
+    let c=S.courses.find(x=>x.id===r.courseKey)||S.courses.find(x=>x.name.toLowerCase()===r.courseName.toLowerCase()&&x.holes.length===r.pars.length);
+    if(!c){c={id:r.courseKey,name:r.courseName,location:"",source:"udisc",createdAt:new Date().toISOString(),holes:r.pars.map(p=>({par:p,dist:0}))};await Store.saveCourse(c);}
+    courseFor[r.courseKey]=c;
+  }
+  for(const r of fresh){
+    const c=courseFor[r.courseKey];
+    await Store.saveRound({id:r.id,courseId:c.id,courseName:c.name,pars:r.pars,date:r.date,source:"udisc",
+      players:r.players.map(p=>({name:p.name,isMe:p.name===u.me,scores:p.scores}))});
+  }
+  if(!S.profile.myName||S.profile.myName==="Es"){S.profile.myName=u.me;Store.saveProfile();}
+  S.ui.udisc=null;S.ui.progCourse=null;setTab("prog");
+  toast("Importēti "+fresh.length+" raundi no UDisc");
+}
+
+/* ---------- example data (clearly marked) ---------- */
+async function loadExample(){
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const c1={id:"ex-parks",name:"Mežaparka laukums",location:"",example:true,createdAt:new Date().toISOString(),holes:[3,3,4,3,3,5,3,4,3].map((p,i)=>({par:p,dist:[62,78,145,70,88,210,55,132,96][i]}))};
+  const c2={id:"ex-kalns",name:"Kalna trase",location:"",example:true,createdAt:new Date().toISOString(),holes:Array.from({length:18},(_,i)=>({par:[3,3,4,3,3,3,4,3,5,3,3,4,3,3,3,4,3,3][i],dist:60+Math.round(rnd()*110)}))};
+  const me=S.profile.myName||"Es";
+  const rs=[];const now=Date.now();
+  for(let k=0;k<14;k++){
+    const c=k%3===2?c2:c1,pars=c.holes.map(h=>h.par);
+    const skill=1.0-k*0.055; /* strokes over par per hole shrinks over time */
+    const sc=pars.map(p=>{const x=rnd();let d=x<0.12+k*0.012?-1:x<0.55+k*0.01?0:x<0.55+skill*0.4?1:2;if(skill<0.4&&d===2)d=1;return p+d;});
+    const pl=[{name:me,isMe:true,scores:sc}];
+    if(k%2===0)pl.push({name:"Jānis",isMe:false,scores:pars.map(p=>p+(rnd()<0.2?-1:rnd()<0.6?0:1))});
+    const date=new Date(now-(14-k)*7.5*864e5-(k%3)*3600e3).toISOString();
+    rs.push({id:"ex-r"+k,courseId:c.id,courseName:c.name,pars,date,players:pl,example:true});
+  }
+  toast("Ielādē piemēra datus…");
+  await Store.saveCourse(c1);await Store.saveCourse(c2);
+  for(const r of rs)await Store.saveRound(r);
+  S.ui.sel.course=c1.id;setTab("prog");toast("Piemēra dati ielādēti — tos var dzēst sadaļā Laukumi");
+}
+
+render();
+Store.init();
+})();
+</script>

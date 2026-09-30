@@ -1,0 +1,9 @@
+{
+  "appId": "lv.iemetejs.app",
+  "appName": "Iemetējs",
+  "webDir": "www",
+  "android": {
+    "adjustMarginsForEdgeToEdge": "auto",
+    "backgroundColor": "#0e6a3d"
+  }
+}

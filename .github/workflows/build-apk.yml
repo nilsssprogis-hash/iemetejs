@@ -1,0 +1,71 @@
+name: Uzbūvēt APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Instalēt atkarības
+        run: npm install
+
+      - name: Sagatavot lietotnes failus
+        run: node scripts/build-www.mjs
+
+      - name: Izveidot Android projektu
+        run: npx cap add android
+
+      - name: Ikona un sākuma ekrāns
+        continue-on-error: true
+        run: npx capacitor-assets generate --android --iconBackgroundColor "#0e6a3d" --iconBackgroundColorDark "#0e6a3d" --splashBackgroundColor "#0e6a3d" --splashBackgroundColorDark "#0a1811"
+
+      - name: Sinhronizēt
+        run: npx cap sync android
+
+      - name: Versijas numurs
+        run: |
+          sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" android/app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
+          grep -E "versionCode|versionName" android/app/build.gradle
+
+      - name: Parakstīšanas atslēga (vienmēr tā pati, lai atjauninājumi uzstādās pāri)
+        run: mkdir -p ~/.android && cp signing/debug.keystore ~/.android/debug.keystore
+
+      - name: Uzbūvēt APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Pārsaukt APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk "Iemetejs-1.0.${{ github.run_number }}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Iemetejs-1.0.${{ github.run_number }}
+          path: Iemetejs-*.apk
+
+      - name: Publicēt laidienu
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v1.0.${{ github.run_number }}" Iemetejs-*.apk \
+            --title "Iemetējs 1.0.${{ github.run_number }}" \
+            --notes "Lejupielādē APK failu zemāk un uzstādi telefonā. Uzstādot pāri vecajai versijai, dati saglabājas."
