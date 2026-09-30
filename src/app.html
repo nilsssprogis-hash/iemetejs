@@ -493,7 +493,7 @@ const relCls=d=>d<=-2?"eagle":d<0?"birdie":d===0?"par":d<=3?"bogey":"double";
 function vProg(){
   const all=doneRounds();
   if(!all.length)return '<div class="stack"><div class="eyebrow">Progress</div><h1>Tava statistika</h1></div>'+emptyBox("Statistikai vajag spēles","Pēc katra pabeigta raunda šeit parādīsies vidējais rezultāts, rekordi, birdiju skaits un līkne, kas rāda, kā tu uzlabojies.",'<button class="btn primary" data-act="tab" data-v="play">Sākt spēli</button>'+(S.courses.length?'':'<button class="btn ghost" data-act="loadExample">Ielādēt piemēra datus</button>'));
-  if(S.ui.progCourse==null){const m={};all.forEach(r=>m[r.courseId]=(m[r.courseId]||0)+1);const ids=Object.keys(m);S.ui.progCourse=ids.length>1?ids.sort((a,b)=>m[b]-m[a])[0]:"";}
+  if(S.ui.progCourse==null)S.ui.progCourse="";
   const cid=S.ui.progCourse&&all.some(r=>r.courseId===S.ui.progCourse)?S.ui.progCourse:"";
   const rsC=cid?all.filter(r=>r.courseId===cid):all;
   const years=[...new Set(rsC.map(r=>new Date(r.date).getFullYear()))].sort((a,b)=>b-a);
