@@ -9,6 +9,24 @@ permissions:
   contents: write
 
 jobs:
+  firebase:
+    name: Firebase pārbaude
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalēt Firebase
+        run: npm install firebase@^11 --no-save
+      - name: Kontu izveide (Email/Password)
+        run: node scripts/smoke.mjs auth
+      - name: Datubāze un noteikumi
+        run: node scripts/smoke.mjs firestore
+      - name: Notīrīt testa kontu
+        if: always()
+        run: node scripts/smoke.mjs cleanup || true
+
   build:
     runs-on: ubuntu-latest
     steps:
