@@ -652,7 +652,7 @@ const relCls=d=>d<=-2?"eagle":d<0?"birdie":d===0?"par":d<=3?"bogey":"double";
 
 /* ---- PROGRESS ---- */
 function vProg(){
-  const all=doneRounds();
+  const all=doneRounds().filter(r=>r.players.some(p=>p.isMe));
   if(!all.length)return '<div class="stack"><div class="eyebrow">Progress</div><h1>Tava statistika</h1></div>'+emptyBox("Statistikai vajag spēles","Pēc katra pabeigta raunda šeit parādīsies vidējais rezultāts, rekordi, birdiju skaits un līkne, kas rāda, kā tu uzlabojies.",'<button class="btn primary" data-act="tab" data-v="play">Sākt spēli</button>'+(S.courses.length?'':'<button class="btn ghost" data-act="loadExample">Ielādēt piemēra datus</button>'));
   if(S.ui.progCourse==null)S.ui.progCourse="";
   const cid=S.ui.progCourse&&all.some(r=>r.courseId===S.ui.progCourse)?S.ui.progCourse:"";
@@ -825,6 +825,9 @@ function vCourses(){
   '<p class="small muted" style="margin:0">'+(S.mode==="cloud"?"Dati glabājas tavā Claude kontā un ir redzami tikai tev — tie ir pieejami no jebkuras ierīces, kurā atver šo lietotni.":window.NativeStore?"Dati glabājas šajā telefonā un darbojas bez interneta. Ik pa laikam eksportē rezerves kopiju, piemēram, uz Google Drive vai e-pastu.":"Dati glabājas tikai šajā pārlūkā. Izmanto eksportu, lai saglabātu rezerves kopiju.")+'</p>'+
   '<div class="row">'+'<label class="btn ghost filebtn">Importēt no UDisc<input type="file" class="fileIn" aria-label="Importēt no UDisc"></label>'+(Store.dl||window.NativeStore?'<button class="btn ghost" data-act="export">Eksportēt datus</button>':'')+'<label class="btn ghost filebtn">Importēt Iemetēja failu<input type="file" class="fileIn" aria-label="Importēt Iemetēja failu"></label>'+'</div>'+
   '<details class="small"><summary>Neizdodas izvēlēties failu? Ielīmē faila saturu</summary><div class="stack" style="margin-top:8px"><textarea id="pasteIn" rows="5" placeholder="Atver CSV failu, iezīmē visu tekstu, nokopē un ielīmē šeit"></textarea><button class="btn ghost" data-act="pasteGo">Importēt ielīmēto</button></div></details>'+
+  (()=>{const n=S.rounds.filter(r=>!r.players.some(p=>p.isMe)).length;if(!n)return'';
+    return S.ui.confirmNoMe?'<div class="confirm"><span>Dzēst '+n+' raundus, kuros tu nepiedalījies?</span><button class="btn danger" data-act="noMeYes">Dzēst</button><button class="btn ghost" data-act="noMeNo">Atcelt</button></div>'
+    :'<div class="warn">'+n+' '+(n===1?'raundā':'raundos')+' tu neesi starp spēlētājiem (piemēram, no UDisc importa). Tie netiek skaitīti tavā statistikā. <button class="link" data-act="noMeAsk">Dzēst tos</button></div>';})()+
   '<p class="small muted" style="margin:0">UDisc failu iegūst UDisc lietotnē: You → ☰ → Rounds → ☰ → Export to CSV.</p>'+
   (devOK()?'<div class="eyebrow">Spēles laikā</div>'+
     '<label class="tog"><input type="checkbox" id="prefLock" data-pref="lock"'+(prefs.lock?' checked':'')+'><span><b>Rādīt pāri bloķēšanas ekrānam</b><br><span class="small muted">Ieslēdzot ekrānu, Iemetējs atveras uzreiz, bez PIN koda. Pārējais telefons paliek bloķēts. Pēc spēles izslēdzas pats.</span></span></label>'+
@@ -842,15 +845,21 @@ function courseRows(){
 }
 function vUdisc(){
   const u=S.ui.udisc,rs=u.rounds;
-  const fresh=rs.filter(r=>!S.rounds.some(x=>x.id===pid(r.id)));
-  const courses=[...new Set(rs.map(r=>r.courseName))];
+  const have=new Set(S.rounds.map(x=>x.id));
+  const mineAll=rs.filter(r=>r.players.some(p=>p.name===u.me));
+  const pool=u.all?rs:mineAll;
+  const fresh=pool.filter(r=>!have.has(pid(r.id)));
+  const skipped=rs.length-mineAll.length;
+  const courses=[...new Set(pool.map(r=>r.courseName))];
   const ds=rs.map(r=>r.date).sort();
   return '<div class="stack"><div class="eyebrow">Imports no UDisc</div><h1>'+rs.length+' '+(rs.length===1?'raunds':'raundi')+' failā</h1></div>'+
   '<section class="card stack"><div class="small muted">'+fmtDate(ds[0])+(ds.length>1?' – '+fmtDate(ds[ds.length-1]):'')+'</div>'+
-  '<div>'+courses.map(c=>'<div><b>'+esc(c)+'</b> <span class="muted small">· '+rs.filter(r=>r.courseName===c).length+' raundi</span></div>').join("")+'</div>'+
-  (fresh.length<rs.length?'<div class="warn">'+(rs.length-fresh.length)+' no tiem jau ir importēti — tos izlaidīšu.</div>':'')+
+  '<div>'+courses.slice(0,30).map(c=>'<div><b>'+esc(c)+'</b> <span class="muted small">· '+pool.filter(r=>r.courseName===c).length+' raundi</span></div>').join("")+(courses.length>30?'<div class="small muted">… un vēl '+(courses.length-30)+' laukumi</div>':'')+'</div>'+
+  (fresh.length<pool.length?'<div class="warn">'+(pool.length-fresh.length)+' no tiem jau ir importēti — tos izlaidīšu.</div>':'')+
   '<h2>Kurš no spēlētājiem esi tu?</h2><p class="small muted" style="margin:0">Tavi rezultāti veidos progresa statistiku. Pārējie spēlētāji saglabāsies rezultātu kartēs.</p>'+
-  '<div class="chips">'+u.names.map(n=>'<button class="chip'+(n===u.me?' me':'')+'" data-act="udMe" data-v="'+esc(n)+'" aria-pressed="'+(n===u.me)+'">'+esc(n)+'</button>').join("")+'</div>'+
+  '<div class="chips">'+u.names.map(n=>'<button class="chip'+(n===u.me?' me':'')+'" data-act="udMe" data-v="'+esc(n)+'" aria-pressed="'+(n===u.me)+'">'+esc(n)+' <span class="muted">'+rs.filter(r=>r.players.some(p=>p.name===n)).length+'</span></button>').join("")+'</div>'+
+  '<div class="'+(skipped&&!u.all?'warn':'small muted')+'">'+esc(u.me)+' spēlēja <b>'+mineAll.length+'</b> no '+rs.length+' raundiem.'+(skipped?(u.all?' Importēsi arī '+skipped+' raundus bez '+esc(u.me)+' — tie neietekmēs tavu statistiku.':' Pārējie '+skipped+' raundi (kur '+esc(u.me)+' nepiedalījās) netiks importēti.'):'')+'</div>'+
+  (skipped?'<label class="tog"><input type="checkbox" id="udAll" data-udall="1"'+(u.all?' checked':'')+'><span>Importēt arī raundus, kuros '+esc(u.me)+' nespēlēja<br><span class="small muted">Piemēram, ja vadīji rezultātus citiem. Tie būs vēsturē, bet ne tavā statistikā.</span></span></label>':'')+
   '<div class="navrow"><button class="btn ghost" data-act="udCancel">Atcelt</button><button class="btn primary" data-act="udGo"'+(fresh.length?'':' disabled')+'>Importēt '+fresh.length+' '+(fresh.length===1?'raundu':'raundus')+'</button></div></section>';
 }
 function accountSection(){
@@ -1050,6 +1059,11 @@ document.addEventListener("click",ev=>{
     case"progTo":S.ui.progCourse=v;render();window.scrollTo(0,0);break;
     case"newCourse":S.tab="course";S.ui.edit=blankCourse(9);S.ui.editErr=null;render();window.scrollTo(0,0);break;
     case"editCourse":S.ui.edit=clone(S.courses.find(x=>x.id===v));S.ui.editErr=null;S.ui.confirmDelC=false;render();window.scrollTo(0,0);break;
+    case"noMeAsk":S.ui.confirmNoMe=true;render();break;
+    case"noMeNo":S.ui.confirmNoMe=false;render();break;
+    case"noMeYes":{const ids=S.rounds.filter(r=>!r.players.some(p=>p.isMe)).map(r=>r.id);S.ui.confirmNoMe=false;
+      if(S.mode!=="local"){ids.forEach(id=>Store.delRound(id));}else{S.rounds=S.rounds.filter(r=>!ids.includes(r.id));Store.flushLocal();}
+      render();toast("Izdzēsti "+ids.length+" raundi");break;}
     case"toggleCourses":S.ui.coursesOpen=!S.ui.coursesOpen;render();break;
     case"cancelEdit":S.ui.edit=null;render();break;
     case"holes":{const e=S.ui.edit;if(+v>0&&e.holes.length<36)e.holes.push({par:3,dist:0});if(+v<0&&e.holes.length>1)e.holes.pop();render();break;}
@@ -1081,6 +1095,7 @@ document.addEventListener("input",ev=>{
 });
 document.addEventListener("change",ev=>{
   const t=ev.target;
+  if(t.dataset.udall&&S.ui.udisc){S.ui.udisc.all=t.checked;render();return;}
   if(t.dataset.pref){prefs[t.dataset.pref]=t.checked;savePrefs();devState={lock:null,vol:null};deviceSync();render();return;}
   if(t.dataset.change==="progCourse"){S.ui.progCourse=t.value;render();}
   if(t.dataset.change==="period"&&t.value){S.ui.period=t.value;render();}
@@ -1195,10 +1210,10 @@ function parseUDisc(text){
 async function doUdImport(){
   const u=S.ui.udisc;if(!u)return;
   const have=new Set(S.rounds.map(x=>x.id));
-  const fresh=u.rounds.filter(r=>!have.has(pid(r.id)));
+  const fresh=u.rounds.filter(r=>(u.all||r.players.some(p=>p.name===u.me))&&!have.has(pid(r.id)));
   const courseFor={},newCourses=[];
   toast("Importē "+fresh.length+" raundus…");
-  for(const r of u.rounds.slice().reverse()){ /* newest round defines the course pars */
+  for(const r of fresh.slice().reverse()){ /* newest round defines the course pars */
     if(courseFor[r.courseKey])continue;
     let c=S.courses.find(x=>x.id===r.courseKey)||S.courses.find(x=>x.name.toLowerCase()===r.courseName.toLowerCase()&&x.holes.length===r.pars.length);
     if(!c){c={id:r.courseKey,name:r.courseName,location:"",source:"udisc",createdAt:new Date().toISOString(),holes:r.pars.map(p=>({par:p,dist:0}))};newCourses.push(c);S.courses.push(c);}
