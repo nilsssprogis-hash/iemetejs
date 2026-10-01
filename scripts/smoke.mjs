@@ -38,6 +38,10 @@ try {
       log("raundu vaicājums OK", q.size);
       const other = await getDoc(doc(db, "rounds", "nav-mans-" + Date.now())).then(() => "ok", e => e.code);
       log("sveša raunda lasīšana:", other);
+      const cnt = await getDoc(doc(db, "meta", "counter"));
+      log("ID skaitītāja lasīšana OK", cnt.exists() ? cnt.data().next : "(vēl nav)");
+      const byName = await getDocs(query(collection(db, "users"), where("pid", "==", "9999")));
+      log("meklēšana pēc ID OK", byName.size);
       await deleteDoc(doc(db, "rounds", rid));
       await deleteDoc(doc(db, "users", uid, "courses", "t1"));
       log("dzēšana OK");

@@ -206,6 +206,13 @@ details summary{cursor:pointer;color:var(--muted);padding:4px 0}
 @media (prefers-reduced-motion:no-preference){.stepper .val{transition:background .15s}.toast{animation:up .2s ease-out}@keyframes up{from{transform:translate(-50%,8px);opacity:0}}}
 
 /* ---- colour layer ---- */
+.sheet-bg{position:fixed;inset:0;background:rgba(5,20,12,.45);z-index:15}
+.sheet{position:fixed;left:0;right:0;top:0;z-index:16;background:var(--bg);border-radius:0 0 18px 18px;box-shadow:0 10px 30px rgba(0,0,0,.25);
+  padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 16px;display:flex;flex-direction:column;gap:12px;max-height:85vh;max-height:85dvh}
+.sheet-head{display:flex;gap:8px;max-width:680px;width:100%;margin:0 auto}
+.sheet-head input{flex:1;font-size:18px;padding:13px 14px;border:2px solid var(--pine);border-radius:12px;background:var(--surface);color:var(--ink);min-width:0}
+.sheet-body{overflow-y:auto;display:flex;flex-direction:column;gap:10px;max-width:680px;width:100%;margin:0 auto;padding-bottom:4px}
+#courseFilter{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:16px;width:100%;min-width:0;color:var(--ink)}
 .zchart{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:grab}
 .zchart svg{width:100%;height:auto;display:block}
 .zchart text{fill:var(--muted);font-family:var(--body);font-size:12px}
@@ -369,7 +376,9 @@ const Store={
     S.courses=[];S.rounds=[];S.current=null;
     S.profile={myName:u.displayName||(local&&local.profile&&local.profile.myName)||"Es",friends:[],hiddenFriends:(local&&local.profile&&local.profile.hiddenFriends)||[],email:u.email};
     const onErr=e=>{console.warn(e);toast("Sinhronizācijas kļūda: "+(e&&e.code||e));};
-    Cloud.listenProfile(u.uid,p=>{if(p){S.profile.myName=p.name||S.profile.myName;S.profile.friends=p.friends||[];if(p.hiddenFriends)S.profile.hiddenFriends=p.hiddenFriends;this.watchFriends();}render();},onErr);
+    Cloud.listenProfile(u.uid,p=>{if(p){S.profile.myName=p.name||S.profile.myName;S.profile.friends=p.friends||[];if(p.hiddenFriends)S.profile.hiddenFriends=p.hiddenFriends;S.profile.pid=p.pid||"";this.watchFriends();}
+      if(!(p&&p.pid))this.ensurePid();render();},onErr);
+    window.addEventListener("online",()=>this.ensurePid());
     Cloud.listenCourses(u.uid,cs=>{S.courses=cs;render();},onErr);
     Cloud.listenRounds(u.uid,docs=>this.onRounds(docs),onErr);
     window.addEventListener("online",render);window.addEventListener("offline",render);
@@ -382,6 +391,9 @@ const Store={
       Cloud.bulk(u.uid,cs,rs,(n,t)=>toast("Augšupielādēts "+n+" / "+t)).then(()=>toast("Visi telefona dati ir tavā kontā")).catch(e=>{try{localStorage.removeItem(mk);}catch(x){}this.werr(e);});
     }
   },
+  ensurePid(){if(S.mode!=="fb"||S.profile.pid||this.pidBusy||!navigator.onLine||!Cloud.ensurePid)return;this.pidBusy=true;
+    const nm=S.profile.myName||"Spēlētājs";
+    Cloud.ensurePid(S.uid,nm,fold(nm)).then(pid=>{S.profile.pid=pid;toast("Tavs spēlētāja ID: #"+pid);render();}).catch(e=>console.warn("pid",e)).finally(()=>{this.pidBusy=false;});},
   watchFriends(){const ids=(S.profile.friends||[]).slice().sort().join(",");if(ids===this.fKey)return;this.fKey=ids;
     if(this.unFriends)this.unFriends();this.unFriends=Cloud.listenUsers(S.profile.friends||[],list=>{S.friends=list;render();});},
   onRounds(docs){
@@ -426,7 +438,7 @@ const Store={
   saveRound(r){this.upsert(S.rounds,r);if(S.mode==="fb")return Cloud.setRound(r.id,toDoc(r,"done")).catch(e=>this.werr(e));if(S.mode==="cloud")return this.q(()=>this.base.collection("rounds").doc(r.id).set(clone(r)));this.saveLocal();return Promise.resolve();},
   delRound(id){const old=S.rounds.find(r=>r.id===id);S.rounds=S.rounds.filter(r=>r.id!==id);
     if(S.mode==="fb"){const others=((old&&old.memberUids)||[]).filter(u=>u!==S.uid);return (others.length?Cloud.leaveRound(id,S.uid):Cloud.delRound(id)).catch(e=>this.werr(e));}if(S.mode==="cloud")return this.q(()=>this.base.collection("rounds").doc(id).delete());this.saveLocal();return Promise.resolve();},
-  saveProfile(){if(S.mode==="fb")return Cloud.saveProfile(S.uid,{name:S.profile.myName,friends:S.profile.friends||[],hiddenFriends:S.profile.hiddenFriends||[]}).catch(e=>this.werr(e));if(S.mode==="cloud")return this.q(()=>this.base.set(clone(S.profile)));this.saveLocal();return Promise.resolve();},
+  saveProfile(){if(S.mode==="fb")return Cloud.saveProfile(S.uid,{name:S.profile.myName,nameLower:fold(S.profile.myName),friends:S.profile.friends||[],hiddenFriends:S.profile.hiddenFriends||[]}).catch(e=>this.werr(e));if(S.mode==="cloud")return this.q(()=>this.base.set(clone(S.profile)));this.saveLocal();return Promise.resolve();},
   saveCurrent(now){
     clearTimeout(this.curTimer);if(S.mode==="fb")return;
     const go=()=>{if(S.mode==="cloud"){const snap=S.current?clone(S.current):null;this.q(()=>snap?this.base.collection("state").doc("current").set({round:snap}):this.base.collection("state").doc("current").delete());}else this.saveLocal();};
@@ -507,9 +519,46 @@ function vPlay(){
   (accF.length?'<div class="chips">'+accF.map(f=>'<button class="chip add acc" data-act="addAcc" data-v="'+f.uid+'">+ '+esc(f.name)+'</button>').join("")+'</div><p class="small muted" style="margin:0">Draugi ar kontu redzēs spēli un varēs ievadīt rezultātus savā telefonā.</p>':'')+
   (friends.length?'<div class="chips">'+friends.map(n=>'<button class="chip add lp" data-act="addFriend" data-v="'+esc(n)+'">+ '+esc(n)+'</button>').join("")+'</div><p class="small muted" style="margin:0">Turi nospiestu vārdu, lai to noņemtu no ieteikumiem.</p>':'')+
   (S.ui.hideAsk?'<div class="confirm"><span>Noņemt “'+esc(S.ui.hideAsk)+'” no ieteiktajiem spēlētājiem? Vecie rezultāti paliks.</span><button class="btn danger" data-act="hideYes">Noņemt</button><button class="btn ghost" data-act="hideNo">Atcelt</button></div>':'')+
-  '<form class="row" data-form="addPlayer" style="flex-wrap:nowrap"><input type="text" id="newPlayer" placeholder="Pievienot spēlētāju" maxlength="30" autocomplete="off"><button class="btn ghost" type="submit">Pievienot</button></form></section>'+
+  '<button class="btn ghost wide" data-act="addOpen">+ Pievienot spēlētāju (vārds vai ID)</button>'+
+  (S.mode==="fb"&&S.profile.pid?'<p class="small muted" style="margin:0">Tavs spēlētāja ID: <b class="num" style="font-size:17px;color:var(--ink)">#'+esc(S.profile.pid)+'</b> — pasaki to draugiem, lai viņi tevi pievienotu.</p>':'')+'</section>'+
+  (S.ui.addOpen?addSheet():'')+
   '<button class="btn primary wide" data-act="start" style="min-height:54px;font-size:17px">Sākt spēli</button>';
 }
+/* ---- add-player sheet (sits at the top so the keyboard never covers it) ---- */
+function addSheet(){
+  return '<div class="sheet-bg" data-act="addClose"></div><div class="sheet" role="dialog" aria-label="Pievienot spēlētāju">'+
+  '<div class="sheet-head"><input type="text" id="addQ" placeholder="Vārds vai ID, piem. 0001" value="'+esc(S.ui.addQ||"")+'" autocomplete="off" autocapitalize="words" enterkeyhint="done"><button class="btn primary" data-act="addClose">Gatavs</button></div>'+
+  '<div class="sheet-body" id="addRes">'+addResHTML()+'</div></div>';
+}
+function addResHTML(){
+  const q=(S.ui.addQ||"").trim(),fq=fold(q),pls=S.ui.newPlayers||[];
+  const inGame=n=>pls.some(p=>p.name.toLowerCase()===n.toLowerCase());
+  let h='<div class="eyebrow">Spēlē ('+pls.length+')</div><div class="chips">'+pls.map((p,i)=>'<span class="chip'+(p.isMe?' me':'')+(p.uid&&!p.isMe?' acc':'')+'">'+esc(p.name)+(p.isMe?'':' <button class="x" data-act="rmPlayer" data-v="'+i+'" aria-label="Noņemt '+esc(p.name)+'">×</button>')+'</span>').join("")+'</div>';
+  const accounts=(S.ui.addRes||[]).filter(u=>u.uid!==S.uid&&!pls.some(p=>p.uid===u.uid));
+  if(S.mode==="fb"&&q){
+    h+='<div class="eyebrow">Spēlētāji ar kontu</div>';
+    h+=accounts.length?'<div class="pick">'+accounts.map(u=>'<button class="opt" data-act="addUser" data-v="'+u.uid+'"><span><span class="t">'+esc(u.name)+'</span>'+(u.pid?' <span class="muted">#'+esc(u.pid)+'</span>':'')+'</span><span class="small muted">+ pievienot</span></button>').join("")+'</div>'
+      :'<p class="small muted" style="margin:0">'+(S.ui.addBusy?'Meklē…':/^\d{1,4}$/.test(q)?'Nav spēlētāja ar ID #'+esc(q.padStart(4,"0"))+'.':q.length<2?'Ieraksti vismaz 2 burtus vai ID.':(S.ui.addRes||[]).length?'Atrastie spēlētāji jau ir spēlē.':'Neviens konts neatbilst “'+esc(q)+'”.')+'</p>';
+  }
+  const fr=(S.friends||[]).filter(f=>!pls.some(p=>p.uid===f.uid)&&(!fq||fold(f.name).includes(fq)||(f.pid||"").startsWith(q)));
+  const guests=friendNames().filter(n=>!inGame(n)&&!(S.friends||[]).some(f=>f.name.toLowerCase()===n.toLowerCase())&&(!fq||fold(n).includes(fq))).slice(0,12);
+  if(fr.length)h+='<div class="eyebrow">Draugi</div><div class="chips">'+fr.map(f=>'<button class="chip add acc" data-act="addAcc" data-v="'+f.uid+'">+ '+esc(f.name)+(f.pid?' #'+esc(f.pid):'')+'</button>').join("")+'</div>';
+  if(guests.length)h+='<div class="eyebrow">Iepriekšējie spēlētāji</div><div class="chips">'+guests.map(n=>'<button class="chip add" data-act="addFriend" data-v="'+esc(n)+'">+ '+esc(n)+'</button>').join("")+'</div>';
+  if(q&&!/^\d+$/.test(q)&&!inGame(q))h+='<button class="btn ghost wide" data-act="addGuest">+ Pievienot “'+esc(q)+'” kā viesi (bez konta)</button>';
+  if(window.Cloud&&S.mode!=="fb")h+='<p class="small muted" style="margin:0">Pieraksties, lai pievienotu draugus pēc ID un spēlētu kopā.</p>';
+  return h;
+}
+let addT=null;
+function addSearch(){
+  const q=(S.ui.addQ||"").trim();clearTimeout(addT);
+  const upd=()=>{const el=$("#addRes");if(el)el.innerHTML=addResHTML();};
+  if(S.mode!=="fb"||!q||(!/^\d{1,4}$/.test(q)&&q.length<2)){S.ui.addRes=[];S.ui.addBusy=false;upd();return;}
+  S.ui.addBusy=true;upd();
+  addT=setTimeout(()=>{const my=q;
+    (/^\d{1,4}$/.test(q)?Cloud.findByPid(q.padStart(4,"0")):Cloud.searchUsers(fold(q))).then(r=>{if((S.ui.addQ||"").trim()!==my)return;S.ui.addRes=r;S.ui.addBusy=false;upd();})
+    .catch(e=>{S.ui.addBusy=false;S.ui.addRes=[];upd();toast(navigator.onLine?"Meklēšana neizdevās":"Meklēšanai vajag internetu");});},350);
+}
+function afterAdd(){S.ui.addQ="";S.ui.addRes=[];render();const i=$("#addQ");if(i)i.focus();}
 function startSel(id){
   const c=S.courses.find(x=>x.id===id);if(!c)return"";
   const k=S.ui.sel.start||0;
@@ -760,7 +809,8 @@ function vCourses(){
   const list=S.courses.slice().sort((a,b)=>a.name.localeCompare(b.name,"lv"));
   const hasEx=S.courses.some(c=>c.example)||S.rounds.some(r=>r.example);
   return '<div class="stack"><div class="eyebrow">Laukumi</div><h1>Tavi laukumi</h1></div>'+
-  (list.length?'<div class="clist">'+list.map(c=>'<div class="crow"><div><div class="t">'+esc(c.name)+(c.example?' <span class="tag">piemērs</span>':'')+'</div><div class="small muted">'+c.holes.length+' grozi · par '+sum(c.holes.map(h=>h.par))+(c.location?' · '+esc(c.location):'')+' · '+playsOf(c.id)+' spēles</div></div><button class="btn ghost" data-act="editCourse" data-v="'+c.id+'">Labot</button></div>').join("")+'</div>':emptyBox("Nav laukumu","Pievieno pirmo laukumu, importē savus raundus no UDisc vai ielādē piemēra datus.",'<label class="btn primary filebtn">Importēt no UDisc<input type="file" class="fileIn" aria-label="Importēt no UDisc"></label><button class="btn ghost" data-act="loadExample">Ielādēt piemēra datus</button>'))+
+  (list.length?'<section class="card stack"><div class="spread"><h2>Laukumi <span class="muted" style="font-weight:500">('+list.length+')</span></h2><button class="btn ghost" data-act="toggleCourses" aria-expanded="'+!!S.ui.coursesOpen+'">'+(S.ui.coursesOpen?'Sakļaut ▴':'Rādīt visus ▾')+'</button></div>'+
+    '<input type="search" id="courseFilter" placeholder="Meklēt laukumu pēc nosaukuma…" value="'+esc(S.ui.cf||"")+'" autocomplete="off"><div id="cfList">'+courseRows()+'</div></section>':emptyBox("Nav laukumu","Pievieno pirmo laukumu, importē savus raundus no UDisc vai ielādē piemēra datus.",'<label class="btn primary filebtn">Importēt no UDisc<input type="file" class="fileIn" aria-label="Importēt no UDisc"></label><button class="btn ghost" data-act="loadExample">Ielādēt piemēra datus</button>'))+
   '<button class="btn primary wide" data-act="newCourse">+ Jauns laukums</button>'+
   accountSection()+
   '<section class="card stack"><h2>Iestatījumi</h2>'+
@@ -772,6 +822,13 @@ function vCourses(){
   '<p class="small muted" style="margin:0">Iemetējs '+esc(window.APP_VERSION||"tīmekļa versija")+(window.CloudWarn?' · '+esc(window.CloudWarn):'')+'</p>'+
   (hasEx?(S.ui.confirmEx?'<div class="confirm"><span>Dzēst visus piemēra laukumus un raundus?</span><button class="btn danger" data-act="delExYes">Dzēst</button><button class="btn ghost" data-act="delExNo">Atcelt</button></div>':'<button class="link" data-act="delEx">Dzēst piemēra datus</button>'):'')+
   '</section>';
+}
+function courseRows(){
+  const q=fold(S.ui.cf).trim();
+  if(!q&&!S.ui.coursesOpen)return '<p class="small muted" style="margin:0">Saraksts sakļauts. Raksti nosaukumu vai spied “Rādīt visus”.</p>';
+  const list=S.courses.slice().sort((a,b)=>a.name.localeCompare(b.name,"lv")).filter(c=>!q||q.split(/\s+/).every(w=>fold(c.name+" "+(c.location||"")).includes(w)));
+  if(!list.length)return '<p class="small muted" style="margin:0">Neviens laukums neatbilst “'+esc(S.ui.cf)+'”.</p>';
+  return '<div class="clist">'+list.slice(0,200).map(c=>'<div class="crow"><div><div class="t">'+esc(c.name)+(c.example?' <span class="tag">piemērs</span>':'')+'</div><div class="small muted">'+c.holes.length+' grozi · par '+sum(c.holes.map(h=>h.par))+(c.location?' · '+esc(c.location):'')+' · '+playsOf(c.id)+' spēles</div></div><button class="btn ghost" data-act="editCourse" data-v="'+c.id+'">Labot</button></div>').join("")+'</div>'+(list.length>200?'<p class="small muted">Rādīti pirmie 200 — precizē meklēšanu.</p>':'');
 }
 function vUdisc(){
   const u=S.ui.udisc,rs=u.rounds;
@@ -791,10 +848,9 @@ function accountSection(){
   if(S.mode!=="fb")return '<section class="card stack"><h2>Konts un draugi</h2><p class="small muted" style="margin:0">Ar kontu tavas spēles sinhronizējas mākonī, un draugi kopīgās spēles redz savā telefonā tiešraidē. Telefona dati tiks augšupielādēti kontā.</p><div class="row"><button class="btn primary" data-act="authOpen">Pierakstīties</button></div></section>';
   const fr=(S.friends||[]);
   return '<section class="card stack"><h2>Konts un draugi</h2>'+
-  '<div class="spread"><div><b>'+esc(S.profile.myName||"")+'</b><br><span class="small muted">'+esc(S.profile.email||"")+'</span></div><button class="btn ghost" data-act="signOut">Izrakstīties</button></div>'+
+  '<div class="spread"><div><b>'+esc(S.profile.myName||"")+'</b>'+(S.profile.pid?' <span class="num" style="font-size:18px">#'+esc(S.profile.pid)+'</span>':'')+'<br><span class="small muted">'+esc(S.profile.email||"")+'</span></div><button class="btn ghost" data-act="signOut">Izrakstīties</button></div>'+
   '<div class="eyebrow">Draugi</div>'+
-  (fr.length?'<div class="chips">'+fr.map(f=>'<span class="chip acc">'+esc(f.name)+' <button class="x" data-act="rmAcc" data-v="'+f.uid+'" aria-label="Noņemt '+esc(f.name)+'">×</button></span>').join("")+'</div>':'<p class="small muted" style="margin:0">Vēl nav draugu. Pievieno draugu pēc e-pasta, ar kuru viņš reģistrējās Iemetējā.</p>')+
-  '<form class="row" data-form="addAccFriend" style="flex-wrap:nowrap"><input type="email" id="friendEmail" placeholder="Drauga e-pasts" autocomplete="off"><button class="btn ghost" type="submit">Pievienot</button></form>'+
+  (fr.length?'<div class="chips">'+fr.map(f=>'<span class="chip acc">'+esc(f.name)+' <button class="x" data-act="rmAcc" data-v="'+f.uid+'" aria-label="Noņemt '+esc(f.name)+'">×</button></span>').join("")+'</div>':'<p class="small muted" style="margin:0">Vēl nav draugu. Draugi parādīsies šeit, kad pievienosi viņus spēlei pēc vārda vai ID sadaļā Spēle.</p>')+
   '</section>';
 }
 function vAuth(){
@@ -910,8 +966,15 @@ document.addEventListener("click",ev=>{
     case"togglePick":S.ui.pickOpen=!S.ui.pickOpen;S.ui.courseQ="";render();if(S.ui.pickOpen){const q=$("#courseQ");if(q)q.focus();}break;
     case"hideYes":{const n=S.ui.hideAsk;S.profile.hiddenFriends=[...new Set([...(S.profile.hiddenFriends||[]),n.toLowerCase()])];S.ui.hideAsk=null;Store.saveProfile();render();toast("“"+n+"” noņemts no ieteikumiem");break;}
     case"hideNo":S.ui.hideAsk=null;render();break;
-    case"rmPlayer":S.ui.newPlayers.splice(+v,1);render();break;
-    case"addAcc":{const f=S.friends.find(x=>x.uid===v);if(f)S.ui.newPlayers.push({name:f.name,isMe:false,uid:f.uid});render();break;}
+    case"rmPlayer":S.ui.newPlayers.splice(+v,1);if(S.ui.addOpen){const el=$("#addRes");if(el)el.innerHTML=addResHTML();}render();if(S.ui.addOpen){const i=$("#addQ");if(i)i.focus();}break;
+    case"addAcc":{const f=S.friends.find(x=>x.uid===v);if(f)S.ui.newPlayers.push({name:f.name,isMe:false,uid:f.uid});if(S.ui.addOpen)afterAdd();else render();break;}
+    case"addOpen":S.ui.addOpen=true;S.ui.addQ="";S.ui.addRes=[];render();{const i=$("#addQ");if(i)i.focus();}break;
+    case"addClose":S.ui.addOpen=false;render();break;
+    case"addGuest":{const n=(S.ui.addQ||"").trim().slice(0,30);if(!n)break;if(S.ui.newPlayers.length>=12){toast("Līdz 12 spēlētājiem vienā spēlē");break;}
+      S.ui.newPlayers.push({name:n,isMe:false});if((S.profile.hiddenFriends||[]).includes(n.toLowerCase())){S.profile.hiddenFriends=S.profile.hiddenFriends.filter(h=>h!==n.toLowerCase());Store.saveProfile();}afterAdd();break;}
+    case"addUser":{const u=(S.ui.addRes||[]).find(x=>x.uid===v);if(!u)break;S.ui.newPlayers.push({name:u.name,isMe:false,uid:u.uid});
+      if(!(S.profile.friends||[]).includes(u.uid)){S.profile.friends=[...(S.profile.friends||[]),u.uid];if(!S.friends.some(f=>f.uid===u.uid))S.friends.push({uid:u.uid,name:u.name,pid:u.pid});Store.saveProfile();}
+      toast(u.name+" pievienots spēlei un draugiem");afterAdd();break;}
     case"authOpen":S.ui.auth="login";S.ui.authErr=null;setTab("course");break;
     case"authSwitch":S.ui.auth=S.ui.auth==="login"?"signup":"login";S.ui.authErr=null;render();break;
     case"authCancel":S.ui.auth=null;render();break;
@@ -919,7 +982,7 @@ document.addEventListener("click",ev=>{
       Cloud.reset(em).then(()=>toast("Paroles maiņas saite nosūtīta uz "+em)).catch(e=>{S.ui.authErr=authMsg(e);render();});break;}
     case"signOut":Cloud.signOut();break;
     case"rmAcc":S.profile.friends=(S.profile.friends||[]).filter(u=>u!==v);Store.saveProfile();render();break;
-    case"addFriend":if(lpFired){lpFired=false;break;}S.ui.newPlayers.push({name:v,isMe:false});render();break;
+    case"addFriend":if(lpFired){lpFired=false;break;}S.ui.newPlayers.push({name:v,isMe:false});if(S.ui.addOpen)afterAdd();else render();break;
     case"start":startGame();break;
     case"newGame":S.ui.finished=null;render();break;
     case"goHole":c.hole=+v;S.ui.missing=null;Store.saveCurrent();render();break;
@@ -951,6 +1014,7 @@ document.addEventListener("click",ev=>{
     case"progTo":S.ui.progCourse=v;render();window.scrollTo(0,0);break;
     case"newCourse":S.tab="course";S.ui.edit=blankCourse(9);S.ui.editErr=null;render();window.scrollTo(0,0);break;
     case"editCourse":S.ui.edit=clone(S.courses.find(x=>x.id===v));S.ui.editErr=null;S.ui.confirmDelC=false;render();window.scrollTo(0,0);break;
+    case"toggleCourses":S.ui.coursesOpen=!S.ui.coursesOpen;render();break;
     case"cancelEdit":S.ui.edit=null;render();break;
     case"holes":{const e=S.ui.edit;if(+v>0&&e.holes.length<36)e.holes.push({par:3,dist:0});if(+v<0&&e.holes.length>1)e.holes.pop();render();break;}
     case"holesSet":{const e=S.ui.edit,n=+v;while(e.holes.length<n)e.holes.push({par:3,dist:0});e.holes.length=n;render();break;}
@@ -973,6 +1037,8 @@ document.addEventListener("click",ev=>{
 document.addEventListener("input",ev=>{
   const t=ev.target;
   if(t.dataset.af){S.ui.af=S.ui.af||{};S.ui.af[t.dataset.af]=t.value;return;}
+  if(t.id==="addQ"){S.ui.addQ=t.value;addSearch();return;}
+  if(t.id==="courseFilter"){S.ui.cf=t.value;const l=$("#cfList");if(l)l.innerHTML=courseRows();return;}
   if(t.id==="courseQ"){S.ui.courseQ=t.value;const l=$("#courseList");if(l)l.innerHTML=courseListHTML(S.ui.sel.course);return;}
   if(t.dataset.bind&&S.ui.edit){S.ui.edit[t.dataset.bind]=t.value;}
   if(t.dataset.dist!=null&&S.ui.edit){S.ui.edit.holes[+t.dataset.dist].dist=Math.max(0,Math.min(999,parseInt(t.value,10)||0));}
@@ -984,6 +1050,9 @@ document.addEventListener("change",ev=>{
   if(t.dataset.change==="startHole"){S.ui.sel.start=+t.value;}
   if(t.classList.contains("fileIn")&&t.files&&t.files[0]){const f=t.files[0];doImport(f);t.value="";}
 });
+document.addEventListener("keydown",ev=>{if(ev.target.id==="addQ"&&ev.key==="Enter"){ev.preventDefault();const q=(S.ui.addQ||"").trim();
+  const acc=(S.ui.addRes||[]).filter(u=>u.uid!==S.uid&&!(S.ui.newPlayers||[]).some(p=>p.uid===u.uid));
+  if(acc.length===1)document.querySelector('[data-act=addUser]').click();else if(q&&!/^\d+$/.test(q))document.querySelector('[data-act=addGuest]')?.click();else{S.ui.addOpen=false;render();}}});
 document.addEventListener("submit",ev=>{
   const f=ev.target;ev.preventDefault();
   if(f.dataset.form==="auth"){doAuth();return;}

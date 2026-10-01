@@ -10,7 +10,7 @@ import {
 import {
   initializeFirestore, persistentLocalCache, persistentSingleTabManager, memoryLocalCache,
   doc, setDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot,
-  getDocs, writeBatch, arrayRemove, limit, documentId
+  getDocs, writeBatch, arrayRemove, limit, documentId, runTransaction, orderBy, startAt, endAt, getDoc
 } from "firebase/firestore";
 
 if (config && config.apiKey) try {
@@ -85,13 +85,37 @@ if (config && config.apiKey) try {
       return { uid: d.id, ...d.data() };
     },
 
+    // Secīgs spēlētāja ID (0000, 0001, …) — piešķir vienreiz, prasa internetu
+    async ensurePid(uid, name, nameLower) {
+      const cref = doc(db, "meta", "counter"), uref = doc(db, "users", uid);
+      return runTransaction(db, async t => {
+        const u = await t.get(uref);
+        if (u.exists() && u.data().pid) return u.data().pid;
+        const c = await t.get(cref);
+        const n = c.exists() ? c.data().next : 0;
+        const pid = String(n).padStart(4, "0");
+        t.set(cref, { next: n + 1 });
+        t.set(uref, { pid, name, nameLower }, { merge: true });
+        return pid;
+      });
+    },
+    async findByPid(pid) {
+      const s = await getDocs(query(collection(db, "users"), where("pid", "==", pid), limit(1)));
+      return s.docs.map(d => ({ uid: d.id, name: d.data().name || "Spēlētājs", pid: d.data().pid }));
+    },
+    async searchUsers(prefix) {
+      const s = await getDocs(query(collection(db, "users"), orderBy("nameLower"), startAt(prefix), endAt(prefix + "\uf8ff"), limit(8)));
+      return s.docs.map(d => ({ uid: d.id, name: d.data().name || "Spēlētājs", pid: d.data().pid || "" }));
+    },
+    readCounter: () => getDoc(doc(db, "meta", "counter")).then(s => (s.exists() ? s.data().next : 0)),
+
     listenUsers(uids, cb) {
       const chunks = [];
       for (let i = 0; i < uids.length; i += 30) chunks.push(uids.slice(i, i + 30));
       const parts = chunks.map(() => []);
       if (!chunks.length) { cb([]); return () => {}; }
       const unsubs = chunks.map((ch, k) => onSnapshot(query(collection(db, "users"), where(documentId(), "in", ch)), s => {
-        parts[k] = s.docs.map(d => ({ uid: d.id, name: d.data().name || "Draugs" }));
+        parts[k] = s.docs.map(d => ({ uid: d.id, name: d.data().name || "Draugs", pid: d.data().pid || "" }));
         cb(parts.flat());
       }, () => {}));
       return () => unsubs.forEach(u => u());
