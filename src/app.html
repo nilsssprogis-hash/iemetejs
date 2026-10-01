@@ -828,7 +828,7 @@ function vCourses(){
   '<p class="small muted" style="margin:0">UDisc failu iegūst UDisc lietotnē: You → ☰ → Rounds → ☰ → Export to CSV.</p>'+
   (devOK()?'<div class="eyebrow">Spēles laikā</div>'+
     '<label class="tog"><input type="checkbox" id="prefLock" data-pref="lock"'+(prefs.lock?' checked':'')+'><span><b>Rādīt pāri bloķēšanas ekrānam</b><br><span class="small muted">Ieslēdzot ekrānu, Iemetējs atveras uzreiz, bez PIN koda. Pārējais telefons paliek bloķēts. Pēc spēles izslēdzas pats.</span></span></label>'+
-    '<label class="tog"><input type="checkbox" id="prefVol" data-pref="vol"'+(prefs.vol?' checked':'')+'><span><b>Skaļuma pogas kā + un −</b><br><span class="small muted">Skaļuma augšup = +1, lejup = −1 iezīmētajam spēlētājam. Pieskaries spēlētāja vārdam, lai iezīmētu citu.</span></span></label>':'')+
+    '<label class="tog"><input type="checkbox" id="prefVol" data-pref="vol"'+(prefs.vol?' checked':'')+'><span><b>Skaļuma pogas kā + un −</b><br><span class="small muted">Īss spiediens: augšup = +1, lejup = −1 iezīmētajam spēlētājam. Ilgs spiediens (~0,5 s): augšup = nākamais spēlētājs, pēc pēdējā — nākamais grozs; lejup = iepriekšējais spēlētājs. Turot punkti nemainās.</span></span></label>':'')+
   '<p class="small muted" style="margin:0">Iemetējs '+esc(window.APP_VERSION||"tīmekļa versija")+(window.CloudWarn?' · '+esc(window.CloudWarn):'')+'</p>'+
   (hasEx?(S.ui.confirmEx?'<div class="confirm"><span>Dzēst visus piemēra laukumus un raundus?</span><button class="btn danger" data-act="delExYes">Dzēst</button><button class="btn ghost" data-act="delExNo">Atcelt</button></div>':'<button class="link" data-act="delEx">Dzēst piemēra datus</button>'):'')+
   '</section>';
@@ -929,8 +929,18 @@ function deviceSync(){if(!devOK())return;
   if(want.lock!==devState.lock){devState.lock=want.lock;NativeStore.setLockScreen(want.lock);}
   if(want.vol!==devState.vol){devState.vol=want.vol;NativeStore.setVolumeKeys(want.vol);}}
 function volTarget(){const c=S.current;if(!c)return 0;let i=S.ui.volP;if(i==null||i>=c.players.length){i=c.players.findIndex(p=>p.isMe);if(i<0)i=0;}return i;}
-window.addEventListener("iemetejsVolume",e=>{const dir=e.dir||(e.detail&&e.detail.dir);if(!S.current||S.tab!=="play"||S.ui.finished)return;
-  const pi=volTarget();scoreAdj(pi,dir==="up"?"inc":"dec");if(navigator.vibrate)try{navigator.vibrate(dir==="up"?25:[15,40,15]);}catch(x){}render();});
+const buzz=p=>{if(navigator.vibrate)try{navigator.vibrate(p);}catch(x){}};
+window.addEventListener("iemetejsVolume",e=>{const dir=e.dir||(e.detail&&e.detail.dir),kind=e.kind||(e.detail&&e.detail.kind)||"short";
+  const c=S.current;if(!c||S.tab!=="play"||S.ui.finished)return;
+  if(kind==="long"){ /* long press: switch player, points never change */
+    const n=c.players.length;let i=volTarget();
+    if(dir==="up"){
+      if(i<n-1){S.ui.volP=i+1;buzz(150);}
+      else if(c.hole<c.pars.length-1){confirmHole();S.ui.missing=null;c.hole++;S.ui.volP=0;Store.saveCurrent();buzz([150,90,150,90,150]);toast("Grozs "+NO(c,c.hole));}
+      else{buzz([300,100,300]);toast("Pēdējais grozs — pabeidz spēli ekrānā");}
+    }else{S.ui.volP=i>0?i-1:n-1;buzz(150);}
+    render();window.scrollTo({top:0});return;}
+  const pi=volTarget();scoreAdj(pi,dir==="up"?"inc":"dec");buzz(dir==="up"?30:[20,60,20]);render();});
 function confirmHole(){const c=S.current;if(!c)return;const h=c.hole;c.players.forEach((p,i)=>{if(p.scores[h]==null){p.scores[h]=c.pars[h];Store.cell(i,h,c.pars[h]);}});}
 function finish(early){
   confirmHole();
