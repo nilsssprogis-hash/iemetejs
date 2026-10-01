@@ -58,6 +58,12 @@ jobs:
       - name: Izveidot Android projektu
         run: npx cap add android
 
+      - name: Iemetēja Android kods (bloķēšanas ekrāns, skaļuma pogas)
+        run: |
+          DIR=android/app/src/main/java/lv/iemetejs/app
+          ls $DIR
+          cp native-android/MainActivity.java native-android/IemetejsPlugin.java $DIR/
+
       - name: Ikona un sākuma ekrāns
         continue-on-error: true
         run: npx capacitor-assets generate --android --iconBackgroundColor "#0e6a3d" --iconBackgroundColorDark "#0e6a3d" --splashBackgroundColor "#0e6a3d" --splashBackgroundColorDark "#0a1811"

@@ -206,6 +206,11 @@ details summary{cursor:pointer;color:var(--muted);padding:4px 0}
 @media (prefers-reduced-motion:no-preference){.stepper .val{transition:background .15s}.toast{animation:up .2s ease-out}@keyframes up{from{transform:translate(-50%,8px);opacity:0}}}
 
 /* ---- colour layer ---- */
+.volsel{cursor:pointer}
+.pl.voltarget{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.volbadge{white-space:nowrap;font-size:11px;font-weight:700;letter-spacing:.04em;color:color-mix(in srgb,var(--accent) 45%,var(--ink));margin-bottom:2px}
+.tog{display:flex;gap:12px;align-items:flex-start;padding:6px 0}
+.tog input{width:22px;height:22px;margin-top:2px;accent-color:var(--pine);flex:0 0 auto}
 .sheet-bg{position:fixed;inset:0;background:rgba(5,20,12,.45);z-index:15}
 .sheet{position:fixed;left:0;right:0;top:0;z-index:16;background:var(--bg);border-radius:0 0 18px 18px;box-shadow:0 10px 30px rgba(0,0,0,.25);
   padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 16px;display:flex;flex-direction:column;gap:12px;max-height:85vh;max-height:85dvh}
@@ -487,6 +492,7 @@ function render(){
   v.innerHTML=f();
   if(focusId){const el=document.getElementById(focusId);if(el&&el.tagName==="INPUT"&&el.type==="text"){el.focus();const n=el.value.length;try{el.setSelectionRange(n,n);}catch(e){}}}
   if(v.querySelector(".zchart"))drawCharts();
+  deviceSync();
   const cur=v.querySelector(".pill.cur");if(cur)cur.scrollIntoView({block:"nearest",inline:"center"});
 }
 
@@ -577,7 +583,8 @@ function vScoring(){
   const rows=c.players.map((p,pi)=>{
     const s=p.scores[h];const thru=p.scores.filter(x=>x!=null).length;
     const d=sum(p.scores.map((x,i)=>x==null?0:x-c.pars[i]));
-    return '<div class="card pl"><div><div class="pl-name">'+esc(p.name)+'</div><div class="pl-tot">'+(thru?'<b class="num" style="font-size:18px;color:var(--ink)">'+rel(d)+'</b> pēc '+thru+' groz'+(thru===1?'a':'iem'):'vēl nav metienu')+'</div></div>'+
+    const vt=devOK()&&prefs.vol&&volTarget()===pi;
+    return '<div class="card pl'+(vt?' voltarget':'')+'"><div'+(devOK()&&prefs.vol?' class="volsel" data-act="volSel" data-v="'+pi+'"':'')+'>'+(vt?'<div class="volbadge">▲▼ skaļuma pogas</div>':'')+'<div class="pl-name">'+esc(p.name)+'</div><div class="pl-tot">'+(thru?'<b class="num" style="font-size:18px;color:var(--ink)">'+rel(d)+'</b> pēc '+thru+' groz'+(thru===1?'a':'iem'):'vēl nav metienu')+'</div></div>'+
     '<div class="stepper"><button data-act="dec" data-v="'+pi+'" aria-label="Mazāk metienu">−</button><button class="val '+(s==null?'par':cls(s,par))+'" data-act="setPar" data-v="'+pi+'" aria-label="Metieni: '+(s==null?par+' (par, apstiprinās ar Nākamais grozs)':s)+'">'+(s==null?par:s)+'</button><button data-act="inc" data-v="'+pi+'" aria-label="Vairāk metienu">+</button></div></div>';
   }).join("");
   const last=h===played-1;
@@ -819,6 +826,9 @@ function vCourses(){
   '<div class="row">'+'<label class="btn ghost filebtn">Importēt no UDisc<input type="file" class="fileIn" aria-label="Importēt no UDisc"></label>'+(Store.dl||window.NativeStore?'<button class="btn ghost" data-act="export">Eksportēt datus</button>':'')+'<label class="btn ghost filebtn">Importēt Iemetēja failu<input type="file" class="fileIn" aria-label="Importēt Iemetēja failu"></label>'+'</div>'+
   '<details class="small"><summary>Neizdodas izvēlēties failu? Ielīmē faila saturu</summary><div class="stack" style="margin-top:8px"><textarea id="pasteIn" rows="5" placeholder="Atver CSV failu, iezīmē visu tekstu, nokopē un ielīmē šeit"></textarea><button class="btn ghost" data-act="pasteGo">Importēt ielīmēto</button></div></details>'+
   '<p class="small muted" style="margin:0">UDisc failu iegūst UDisc lietotnē: You → ☰ → Rounds → ☰ → Export to CSV.</p>'+
+  (devOK()?'<div class="eyebrow">Spēles laikā</div>'+
+    '<label class="tog"><input type="checkbox" id="prefLock" data-pref="lock"'+(prefs.lock?' checked':'')+'><span><b>Rādīt pāri bloķēšanas ekrānam</b><br><span class="small muted">Ieslēdzot ekrānu, Iemetējs atveras uzreiz, bez PIN koda. Pārējais telefons paliek bloķēts. Pēc spēles izslēdzas pats.</span></span></label>'+
+    '<label class="tog"><input type="checkbox" id="prefVol" data-pref="vol"'+(prefs.vol?' checked':'')+'><span><b>Skaļuma pogas kā + un −</b><br><span class="small muted">Skaļuma augšup = +1, lejup = −1 iezīmētajam spēlētājam. Pieskaries spēlētāja vārdam, lai iezīmētu citu.</span></span></label>':'')+
   '<p class="small muted" style="margin:0">Iemetējs '+esc(window.APP_VERSION||"tīmekļa versija")+(window.CloudWarn?' · '+esc(window.CloudWarn):'')+'</p>'+
   (hasEx?(S.ui.confirmEx?'<div class="confirm"><span>Dzēst visus piemēra laukumus un raundus?</span><button class="btn danger" data-act="delExYes">Dzēst</button><button class="btn ghost" data-act="delExNo">Atcelt</button></div>':'<button class="link" data-act="delEx">Dzēst piemēra datus</button>'):'')+
   '</section>';
@@ -904,6 +914,23 @@ function startGame(){
   S.ui.newPlayers=null;Store.startLive(S.current);Store.saveCurrent(true);render();window.scrollTo(0,0);
 }
 function missingHoles(){const c=S.current,m=[];c.pars.forEach((_,i)=>{if(c.players.some(p=>p.scores[i]==null))m.push(i);});return m;}
+function scoreAdj(pi,a){const c=S.current;if(!c)return;const p=c.players[pi];if(!p)return;const h=c.hole,par=c.pars[h];let s=p.scores[h];
+  if(a==="setPar")s=s==null?par:s; else if(a==="inc")s=s==null?par+1:Math.min(20,s+1); else s=s==null?Math.max(1,par-1):Math.max(1,s-1);
+  p.scores[h]=s;Store.cell(pi,h,s);Store.saveCurrent();}
+/* ---- phone features: show over lock screen + volume keys as +/− during a round ---- */
+const PREF_KEY="kedes.prefs";
+const prefs=(()=>{try{return Object.assign({lock:true,vol:true},JSON.parse(localStorage.getItem(PREF_KEY)||"{}"));}catch(e){return{lock:true,vol:true};}})();
+function savePrefs(){try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs));}catch(e){}}
+const devOK=()=>!!(window.NativeStore&&NativeStore.hasDevice);
+let devState={lock:null,vol:null};
+function deviceSync(){if(!devOK())return;
+  const active=!!S.current&&!S.ui.finished&&S.tab==="play";
+  const want={lock:active&&prefs.lock,vol:active&&prefs.vol};
+  if(want.lock!==devState.lock){devState.lock=want.lock;NativeStore.setLockScreen(want.lock);}
+  if(want.vol!==devState.vol){devState.vol=want.vol;NativeStore.setVolumeKeys(want.vol);}}
+function volTarget(){const c=S.current;if(!c)return 0;let i=S.ui.volP;if(i==null||i>=c.players.length){i=c.players.findIndex(p=>p.isMe);if(i<0)i=0;}return i;}
+window.addEventListener("iemetejsVolume",e=>{const dir=e.dir||(e.detail&&e.detail.dir);if(!S.current||S.tab!=="play"||S.ui.finished)return;
+  const pi=volTarget();scoreAdj(pi,dir==="up"?"inc":"dec");if(navigator.vibrate)try{navigator.vibrate(dir==="up"?25:[15,40,15]);}catch(x){}render();});
 function confirmHole(){const c=S.current;if(!c)return;const h=c.hole;c.players.forEach((p,i)=>{if(p.scores[h]==null){p.scores[h]=c.pars[h];Store.cell(i,h,c.pars[h]);}});}
 function finish(early){
   confirmHole();
@@ -988,9 +1015,8 @@ document.addEventListener("click",ev=>{
     case"goHole":c.hole=+v;S.ui.missing=null;Store.saveCurrent();render();break;
     case"prevHole":if(c.hole>0)c.hole--;Store.saveCurrent();render();window.scrollTo(0,0);break;
     case"nextHole":confirmHole();S.ui.missing=null;if(c.hole<c.pars.length-1)c.hole++;Store.saveCurrent();render();window.scrollTo(0,0);break;
-    case"setPar":case"inc":case"dec":{const p=c.players[+v],h=c.hole,par=c.pars[h];let s=p.scores[h];
-      if(a==="setPar")s=s==null?par:s; else if(a==="inc")s=s==null?par+1:Math.min(20,s+1); else s=s==null?Math.max(1,par-1):Math.max(1,s-1);
-      p.scores[h]=s;Store.cell(+v,h,s);Store.saveCurrent();render();break;}
+    case"setPar":case"inc":case"dec":scoreAdj(+v,a);render();break;
+    case"volSel":S.ui.volP=+v;render();break;
     case"finish":finish(false);break;
     case"finishEarly":finish(true);break;
     case"abort":S.ui.confirmAbort=true;render();break;
@@ -1045,6 +1071,7 @@ document.addEventListener("input",ev=>{
 });
 document.addEventListener("change",ev=>{
   const t=ev.target;
+  if(t.dataset.pref){prefs[t.dataset.pref]=t.checked;savePrefs();devState={lock:null,vol:null};deviceSync();render();return;}
   if(t.dataset.change==="progCourse"){S.ui.progCourse=t.value;render();}
   if(t.dataset.change==="period"&&t.value){S.ui.period=t.value;render();}
   if(t.dataset.change==="startHole"){S.ui.sel.start=+t.value;}

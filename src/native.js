@@ -12,6 +12,9 @@
     save: function (json) {
       try { if (P.Preferences) P.Preferences.set({ key: KEY, value: json }); } catch (e) {}
     },
+    get hasDevice() { return !!((C.Plugins || {}).Iemetejs); },
+    setLockScreen: function (on) { try { if (P.Iemetejs) return P.Iemetejs.setLockScreen({ enabled: !!on }); } catch (e) {} return Promise.resolve(); },
+    setVolumeKeys: function (on) { try { if (P.Iemetejs) return P.Iemetejs.setVolumeKeys({ enabled: !!on }); } catch (e) {} return Promise.resolve(); },
     exportFile: function (name, data) {
       return P.Filesystem.writeFile({ path: name, data: data, directory: "CACHE", encoding: "utf8" })
         .then(function (r) {
