@@ -206,6 +206,17 @@ details summary{cursor:pointer;color:var(--muted);padding:4px 0}
 @media (prefers-reduced-motion:no-preference){.stepper .val{transition:background .15s}.toast{animation:up .2s ease-out}@keyframes up{from{transform:translate(-50%,8px);opacity:0}}}
 
 /* ---- colour layer ---- */
+.zchart{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:grab}
+.zchart svg{width:100%;height:auto;display:block}
+.zchart text{fill:var(--muted);font-family:var(--body);font-size:12px}
+.zbtns{display:inline-flex;gap:6px}
+.zb{min-width:38px;height:36px;border-radius:10px;border:1.5px solid var(--pine);background:var(--surface);color:var(--pine);font-weight:700;font-size:18px;line-height:1;padding:0 8px}
+.zb.wide{font-size:14px}
+.zfull{position:fixed;inset:0;z-index:20;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 10px) 12px calc(env(safe-area-inset-bottom,0px) + 10px);display:flex;flex-direction:column;gap:10px;overflow:auto}
+.zf-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.zf-head b{font-family:var(--display);font-size:24px;margin-right:auto}
+.zfull .zchart{background:var(--surface);border-radius:14px;padding:6px}
+.confirm.again{background:var(--t-green)}
 .chip.acc{border-color:var(--eagle);color:var(--eagle)}
 .chip.acc::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--eagle);display:inline-block}
 .livechip{font-size:12px;font-weight:700;color:var(--double);letter-spacing:.04em}
@@ -305,7 +316,7 @@ function fromDoc(d){const cells=d.cells||{};const n=(d.pars||[]).length;
   const r={id:d.id,courseId:d.courseId||"",courseName:d.courseName||"",pars:d.pars||[],date:d.date,startedAt:d.startedAt||d.date,live:d.status==="live",
     ownerUid:d.ownerUid,memberUids:d.memberUids||[],nos:d.nos||null,dists:d.dists||null,
     players:(d.players||[]).map((p,i)=>({name:p.name,uid:p.uid||null,isMe:!!p.uid&&p.uid===S.uid,scores:Array.from({length:n},(_,h)=>{const v=cells["p"+i+"_h"+h];return v==null?null:v;})}))};
-  if(d.holeNos)r.holeNos=d.holeNos;if(d.source)r.source=d.source;if(d.example)r.example=true;
+  if(d.holeNos)r.holeNos=d.holeNos;if(d.source)r.source=d.source;if(typeof d.startHole==="number")r.startHole=d.startHole;if(d.example)r.example=true;
   return r;}
 function toDoc(r,status){const cells={};
   r.players.forEach((p,i)=>(p.scores||[]).forEach((v,h)=>{if(v!=null)cells["p"+i+"_h"+h]=v;}));
@@ -314,7 +325,7 @@ function toDoc(r,status){const cells={};
   const now=new Date().toISOString();
   const d={id:r.id,courseId:r.courseId||"",courseName:r.courseName||"",pars:r.pars,date:r.date||now,startedAt:r.startedAt||r.date||now,
     status:status||(r.live?"live":"done"),ownerUid:r.ownerUid||S.uid,memberUids:mem,players,cells,updatedAt:Date.now()};
-  if(r.holeNos)d.holeNos=r.holeNos;if(r.nos)d.nos=r.nos;if(r.dists)d.dists=r.dists;if(r.source)d.source=r.source;if(r.example)d.example=true;
+  if(r.holeNos)d.holeNos=r.holeNos;if(r.nos)d.nos=r.nos;if(r.dists)d.dists=r.dists;if(r.source)d.source=r.source;if(r.example)d.example=true;if(typeof r.startHole==="number")d.startHole=r.startHole;
   return JSON.parse(JSON.stringify(d));}
 try{const t=localStorage.getItem("kedes.tab");if(t)S.tab=t;}catch(e){}
 
@@ -463,6 +474,7 @@ function render(){
   const focusId=document.activeElement&&document.activeElement.id;
   v.innerHTML=f();
   if(focusId){const el=document.getElementById(focusId);if(el&&el.tagName==="INPUT"&&el.type==="text"){el.focus();const n=el.value.length;try{el.setSelectionRange(n,n);}catch(e){}}}
+  if(v.querySelector(".zchart"))drawCharts();
   const cur=v.querySelector(".pill.cur");if(cur)cur.scrollIntoView({block:"nearest",inline:"center"});
 }
 
@@ -565,15 +577,20 @@ function board(r){
 function vHist(){
   const rs=doneRounds().slice().reverse();
   if(!rs.length)return '<div class="stack"><div class="eyebrow">Vēsture</div><h1>Nospēlētie raundi</h1></div>'+emptyBox("Vēl nav nospēlētu raundu","Kad pabeigsi pirmo spēli, tā parādīsies šeit ar pilnu rezultātu karti.",'<button class="btn primary" data-act="tab" data-v="play">Sākt spēli</button>');
-  let lastM="";const lim=S.ui.histN||50;
-  return '<div class="stack"><div class="eyebrow">Vēsture</div><h1>'+rs.length+' '+(rs.length%10===1&&rs.length%100!==11?'raunds':'raundi')+'</h1></div><div class="hist">'+rs.slice(0,lim).map(r=>{
+  return '<div class="stack"><div class="eyebrow">Vēsture</div><h1>'+rs.length+' '+(rs.length%10===1&&rs.length%100!==11?'raunds':'raundi')+'</h1><p class="small muted" style="margin:0">Turi nospiestu raundu, lai to spēlētu vēlreiz.</p></div>'+histList(rs,"histN");
+}
+const MONTHS=["Janvāris","Februāris","Marts","Aprīlis","Maijs","Jūnijs","Jūlijs","Augusts","Septembris","Oktobris","Novembris","Decembris"];
+function histList(rs,key){
+  let lastM="";const lim=S.ui[key]||50;
+  return '<div class="hist">'+rs.slice(0,lim).map(r=>{
     const d=new Date(r.date),m=d.getFullYear()+"-"+d.getMonth();let head="";
-    if(m!==lastM){lastM=m;head='<div class="eyebrow" style="margin-top:6px">'+["Janvāris","Februāris","Marts","Aprīlis","Maijs","Jūnijs","Jūlijs","Augusts","Septembris","Oktobris","Novembris","Decembris"][d.getMonth()]+' '+d.getFullYear()+'</div>';}
+    if(m!==lastM){lastM=m;head='<div class="eyebrow" style="margin-top:6px">'+MONTHS[d.getMonth()]+' '+d.getFullYear()+'</div>';}
     const me=meOf(r),dd=sum(me.scores)-roundPar(r),open=S.ui.openRound===r.id;
     const others=r.players.filter(p=>p!==me).map(p=>p.name);
-    return head+'<button class="hrow" data-act="openRound" data-v="'+r.id+'" aria-expanded="'+open+'"><span class="hdate"><b>'+d.getDate()+'</b><span>'+MON[d.getMonth()]+'</span></span><span class="hmain"><span class="t">'+esc(r.courseName)+'</span> '+(r.example?'<span class="tag">piemērs</span>':'')+'<br><span class="small muted">'+sum(me.scores)+' metieni'+(others.length?' · ar '+esc(others.join(", ")):'')+'</span></span><span class="sc '+relCls(dd)+'">'+rel(dd)+'</span></button>'+
-    (open?'<div class="detail">'+scoreTable(r)+(S.ui.confirmDel===r.id?'<div class="confirm"><span>Dzēst šo raundu no vēstures?</span><button class="btn danger" data-act="delRoundYes" data-v="'+r.id+'">Dzēst</button><button class="btn ghost" data-act="delRoundNo">Atcelt</button></div>':'<div class="spread"><span class="small muted">'+fmtDate(r.date)+'</span><span class="row" style="gap:16px"><button class="btn ghost" data-act="editRound" data-v="'+r.id+'">Labot</button><button class="link" data-act="delRound" data-v="'+r.id+'">Dzēst</button></span></div>')+'</div>':'');
-  }).join("")+'</div>'+(rs.length>lim?'<button class="btn ghost wide" data-act="histMore">Rādīt vēl ('+Math.min(50,rs.length-lim)+' no '+(rs.length-lim)+')</button>':'');
+    return head+'<button class="hrow lp lp-round" data-act="openRound" data-v="'+r.id+'" aria-expanded="'+open+'"><span class="hdate"><b>'+d.getDate()+'</b><span>'+MON[d.getMonth()]+'</span></span><span class="hmain"><span class="t">'+esc(r.courseName)+'</span> '+(r.example?'<span class="tag">piemērs</span>':'')+'<br><span class="small muted">'+sum(me.scores)+' metieni'+(others.length?' · ar '+esc(others.join(", ")):'')+'</span></span><span class="sc '+relCls(dd)+'">'+rel(dd)+'</span></button>'+
+    (S.ui.again===r.id?'<div class="confirm again"><span>Spēlēt šo raundu vēlreiz? Laukums, spēlētāji un sākuma grozs būs tādi paši.</span><button class="btn primary" data-act="againYes" data-v="'+r.id+'">Spēlēt vēlreiz</button><button class="btn ghost" data-act="againNo">Atcelt</button></div>':'')+
+    (open?'<div class="detail">'+scoreTable(r)+(S.ui.confirmDel===r.id?'<div class="confirm"><span>Dzēst šo raundu no vēstures?</span><button class="btn danger" data-act="delRoundYes" data-v="'+r.id+'">Dzēst</button><button class="btn ghost" data-act="delRoundNo">Atcelt</button></div>':'<div class="spread"><span class="small muted">'+fmtDate(r.date)+'</span><span class="row" style="gap:16px"><button class="btn ghost" data-act="againAsk" data-v="'+r.id+'">Spēlēt vēlreiz</button><button class="btn ghost" data-act="editRound" data-v="'+r.id+'">Labot</button><button class="link" data-act="delRound" data-v="'+r.id+'">Dzēst</button></span></div>')+'</div>':'');
+  }).join("")+'</div>'+(rs.length>lim?'<button class="btn ghost wide" data-act="histMore" data-v="'+key+'">Rādīt vēl ('+Math.min(50,rs.length-lim)+' no '+(rs.length-lim)+')</button>':'');
 }
 const relCls=d=>d<=-2?"eagle":d<0?"birdie":d===0?"par":d<=3?"bogey":"double";
 
@@ -618,10 +635,12 @@ function vProg(){
    tile("Labākais",rel(ds[bi]),esc(best.courseName)+", "+fmtDate(best.date))+
    tile("Birdiji",birdies,(birdies/rs.length).toFixed(1)+" vienā spēlē")+
   '</div>'+
-  '<section class="card stack chart"><div class="spread"><h2>Rezultāts pret par</h2><span class="small muted">augstāk = labāk</span></div>'+(mixed?'<p class="small muted" style="margin:0">Laukumiem ir atšķirīgs grozu skaits, tāpēc rezultāti pārrēķināti uz 18 groziem.</p>':'')+chartSVG(rs.slice(-50),cds.slice(-50))+
-  '<div class="legend"><span><i style="background:var(--pine)"></i>Spēle</span><span><i style="background:var(--accent)"></i>Vidējais pēdējām 5</span></div>'+(trend?'<div class="small">'+trend+'</div>':'')+'</section>'+
+  '<section class="card stack chart"><div class="spread"><h2>Rezultāts</h2>'+zoomBtns()+'</div>'+(mixed?'<p class="small muted" style="margin:0">Laukumiem ir atšķirīgs grozu skaits, tāpēc rezultāti pārrēķināti uz 18 groziem.</p>':'')+
+  (chartSetData(rs,cds,cid+"|"+per+"|"+rs.length),'<div class="zchart" id="zc" data-h="230"></div>')+
+  '<div class="legend"><span><i style="background:var(--pine)"></i>Spēle</span><span><i style="background:var(--accent)"></i>Vidējais pēdējām 20</span><span class="muted">augstāk = labāk</span></div>'+
+  '<p class="small muted" style="margin:0">Velc ar pirkstu, lai pārbīdītu laiku · savelc vai izpleti ar diviem pirkstiem, lai tuvinātu · pieskaries punktam, lai redzētu spēli · turi nospiestu, lai atvērtu lielāku.</p>'+(trend?'<div class="small">'+trend+'</div>':'')+'</section>'+
   '<section class="card stack"><h2>Metienu sadalījums</h2>'+distBar(cnt)+'</section>'+
-  (cid?holeTable(rs):courseTable(applyPer(all)));
+  (cid?holeTable(rs)+'<section class="stack"><h2>Vēsture šajā laukumā</h2><p class="small muted" style="margin:0">'+rs.length+' '+(rs.length===1?'raunds':'raundi')+' · '+perLbl.toLowerCase()+'. Turi nospiestu raundu, lai to spēlētu vēlreiz.</p>'+histList(rs.slice().reverse(),"chN")+'</section>':courseTable(applyPer(all)));
 }
 function segBtn(v,l,cur){return '<button class="segb" data-act="period" data-v="'+v+'" aria-pressed="'+(v===cur)+'">'+l+'</button>';}
 function tile(l,v,s){return '<div class="tile"><span class="l">'+l+'</span><span class="v">'+v+'</span><span class="s">'+s+'</span></div>';}
@@ -631,24 +650,82 @@ function distBar(c){
   const col={eagle:"var(--eagle)",birdie:"var(--birdie)",par:"var(--par)",bogey:"var(--bogey)",double:"var(--double)"};
   return '<div class="dist">'+L.map(([k])=>c[k]?'<span style="width:'+(c[k]/tot*100)+'%;background:'+col[k]+'" title="'+k+'"></span>':'').join("")+'</div><div class="legend">'+L.map(([k,n])=>'<span><i style="background:'+col[k]+'"></i>'+n+' <b class="num" style="font-size:16px">'+Math.round(c[k]/tot*100)+'%</b> <span class="muted">('+c[k]+')</span></span>').join("")+'</div>';
 }
-function chartSVG(rs,ds){
-  const W=600,H=230,L=40,R=16,T=14,B=30,w=W-L-R,h=H-T-B,n=ds.length;
-  let lo=Math.min(0,...ds),hi=Math.max(0,...ds);if(hi-lo<4){hi+=2;lo-=2;}
+/* ---- zoomable chart (window over round indices) ---- */
+const CH={rs:[],ds:[],ma:[],x0:0,x1:0,key:"",sel:null,full:false};
+function chartSetData(rs,ds,key){
+  if(CH.key!==key){CH.key=key;const n=ds.length;CH.x1=Math.max(0,n-1);CH.x0=Math.max(0,CH.x1-Math.min(CH.x1,49));CH.sel=null;}
+  CH.rs=rs;CH.ds=ds;CH.ma=ds.map((_,i)=>{const s=ds.slice(Math.max(0,i-19),i+1);return sum(s)/s.length;});clampWin();
+}
+function clampWin(){const n=CH.ds.length;if(n<=1){CH.x0=0;CH.x1=0;return;}
+  const minS=Math.min(4,n-1);let span=Math.max(minS,Math.min(n-1,CH.x1-CH.x0));
+  CH.x0=Math.max(0,Math.min(n-1-span,CH.x0));CH.x1=CH.x0+span;}
+function zoomBy(f,centerIdx){const c=centerIdx==null?(CH.x0+CH.x1)/2:centerIdx;CH.x0=c-(c-CH.x0)*f;CH.x1=c+(CH.x1-c)*f;clampWin();drawCharts();}
+function zoomBtns(){return '<span class="zbtns"><button class="zb" data-act="zoomOut" aria-label="Attālināt">−</button><button class="zb" data-act="zoomIn" aria-label="Pietuvināt">+</button><button class="zb wide" data-act="zoomAll">Viss</button><button class="zb" data-act="openFull" aria-label="Atvērt lielāku">⤢</button></span>';}
+function shortDate(iso){const d=new Date(iso);return d.getDate()+". "+MON[d.getMonth()]+" '"+String(d.getFullYear()).slice(2);}
+function chartSVG(id,H,Wp){
+  const ds=CH.ds,rs=CH.rs,n=ds.length;if(!n)return"";
+  const W=Wp||600,L=42,R=14,T=16,B=30,w=W-L-R,h=H-T-B;
+  const x0=CH.x0,x1=CH.x1,span=Math.max(1e-9,x1-x0);
+  const x=i=>n===1?L+w/2:L+(i-x0)/span*w;
+  const a=Math.max(0,Math.floor(x0)-1),b=Math.min(n-1,Math.ceil(x1)+1);
+  const vis=[];for(let i=a;i<=b;i++)vis.push(i);
+  const vals=vis.map(i=>ds[i]).concat(vis.map(i=>CH.ma[i]));
+  let lo=Math.min(0,...vals),hi=Math.max(0,...vals);if(hi-lo<4){hi+=2;lo-=2;}
   const step=Math.max(1,Math.ceil((hi-lo)/5));lo=Math.floor(lo/step)*step;hi=Math.ceil(hi/step)*step;
   const y=v=>T+(v-lo)/(hi-lo)*h; /* lower score (better) sits higher */
-  const x=i=>n===1?L+w/2:L+i*w/(n-1);
   let g="";
   for(let v=lo;v<=hi;v+=step){g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="var(--line)" stroke-width="'+(v===0?1.6:1)+'"'+(v===0?'':' stroke-dasharray="3 4"')+'/><text x="'+(L-8)+'" y="'+(y(v)+4)+'" text-anchor="end">'+rel(v)+'</text>';}
-  const ma=ds.map((_,i)=>{const s=ds.slice(Math.max(0,i-4),i+1);return sum(s)/s.length;});
-  const pts=ds.map((v,i)=>x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ");
-  const mpts=ma.map((v,i)=>x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ");
-  const area="M"+x(0)+","+y(hi)+" L"+pts.split(" ").join(" L")+" L"+x(n-1)+","+y(hi)+"Z";
-  const dots=ds.map((v,i)=>'<circle cx="'+x(i)+'" cy="'+y(v)+'" r="'+(i===n-1?6:4)+'" fill="var(--'+relCls(Math.round(v))+')" stroke="var(--surface)" stroke-width="2"><title>'+esc(rs[i].courseName)+', '+fmtDate(rs[i].date)+': '+relF(v)+'</title></circle>').join("");
-  const lx=x(n-1),ly=y(ds[n-1]);
-  const lbl='<text x="'+(lx-10)+'" y="'+(ly<T+22?ly+20:ly-12)+'" text-anchor="end" style="fill:var(--ink);font-family:var(--display);font-size:17px;font-weight:700">'+relF(ds[n-1])+'</text>';
-  const xl='<text x="'+x(0)+'" y="'+(H-8)+'" text-anchor="'+(n===1?'middle':'start')+'">'+fmtDate(rs[0].date)+'</text>'+(n>1?'<text x="'+x(n-1)+'" y="'+(H-8)+'" text-anchor="end">'+fmtDate(rs[n-1].date)+'</text>':'');
-  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Rezultāts pret par pa spēlēm">'+g+'<path d="'+area+'" fill="var(--pine)" opacity=".08"/>'+(n>1?'<polyline points="'+mpts+'" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="6 4" stroke-linecap="round"/><polyline points="'+pts+'" fill="none" stroke="var(--pine)" stroke-width="2.5" stroke-linejoin="round"/>':'')+dots+lbl+xl+'</svg>';
+  const P=i=>x(i).toFixed(1)+","+y(ds[i]).toFixed(1),M=i=>x(i).toFixed(1)+","+y(CH.ma[i]).toFixed(1);
+  const pts=vis.map(P).join(" "),mpts=vis.map(M).join(" ");
+  const area=vis.length>1?"M"+x(vis[0])+","+y(hi)+" L"+vis.map(P).join(" L")+" L"+x(vis[vis.length-1])+","+y(hi)+"Z":"";
+  const shown=Math.max(1,span+1),r=shown>150?2:shown>70?3:4.5;
+  const dots=vis.map(i=>'<circle cx="'+x(i).toFixed(1)+'" cy="'+y(ds[i]).toFixed(1)+'" r="'+(i===CH.sel?7:r)+'" fill="var(--'+relCls(Math.round(ds[i]))+')" stroke="var(--surface)" stroke-width="'+(r>3?2:1)+'"/>').join("");
+  const ticks=n===1?[0]:[x0,(x0+x1)/2,x1].map(Math.round).filter((v,i,arr)=>arr.indexOf(v)===i);
+  const xl=ticks.map((i,k)=>'<text x="'+x(i).toFixed(1)+'" y="'+(H-8)+'" text-anchor="'+(ticks.length===1?'middle':k===0?'start':k===ticks.length-1?'end':'middle')+'">'+shortDate(rs[i].date)+'</text>').join("");
+  let sel="";
+  if(CH.sel!=null&&CH.sel>=a&&CH.sel<=b){const i=CH.sel,sx=x(i),sy=y(ds[i]);const txt=shortDate(rs[i].date)+" · "+relF(ds[i]);const txt2=String(rs[i].courseName).slice(0,34);
+    const bw=Math.max(txt.length,txt2.length)*7.2+16,bx=Math.min(W-R-bw,Math.max(L,sx-bw/2)),by=sy>T+60?sy-56:sy+14;
+    sel='<line x1="'+sx+'" x2="'+sx+'" y1="'+T+'" y2="'+(T+h)+'" stroke="var(--ink)" stroke-width="1" stroke-dasharray="2 3"/><rect x="'+bx+'" y="'+by+'" width="'+bw+'" height="42" rx="8" fill="var(--ink)" opacity=".92"/><text x="'+(bx+8)+'" y="'+(by+17)+'" style="fill:var(--bg);font-weight:700">'+esc(txt)+'</text><text x="'+(bx+8)+'" y="'+(by+34)+'" style="fill:var(--bg)">'+esc(txt2)+'</text>';}
+  const info='<text x="'+(W-R)+'" y="'+(T-4)+'" text-anchor="end">'+(Math.round(span)+1)+' no '+n+' spēlēm</text>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Rezultāts pa spēlēm"><defs><clipPath id="cp-'+id+'"><rect x="'+L+'" y="0" width="'+w+'" height="'+H+'"/></clipPath></defs>'+g+info+
+    '<g clip-path="url(#cp-'+id+')"><path d="'+area+'" fill="var(--pine)" opacity=".08"/>'+(vis.length>1?'<polyline points="'+mpts+'" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="6 4" stroke-linecap="round"/><polyline points="'+pts+'" fill="none" stroke="var(--pine)" stroke-width="2" stroke-linejoin="round"/>':'')+dots+'</g>'+sel+xl+'</svg>';
 }
+function drawCharts(){document.querySelectorAll(".zchart").forEach(el=>{const W=Math.max(280,Math.round(el.clientWidth||600));el.dataset.w=W;el.innerHTML=chartSVG(el.id,+el.dataset.h||220,W);});}
+function openFull(){
+  if(CH.full||!CH.ds.length)return;CH.full=true;
+  const H=Math.round(Math.max(240,window.innerHeight-170));
+  const d=document.createElement("div");d.className="zfull";d.id="zfull";
+  d.innerHTML='<div class="zf-head"><b>Rezultāts</b>'+zoomBtns().replace('<button class="zb" data-act="openFull" aria-label="Atvērt lielāku">⤢</button>','')+'<button class="zb" data-act="closeFull" aria-label="Aizvērt">✕</button></div><div class="zchart" id="zcf" data-h="'+H+'"></div><div class="legend"><span><i style="background:var(--pine)"></i>Spēle</span><span><i style="background:var(--accent)"></i>Vidējais pēdējām 20</span><span class="muted">pagriez telefonu, lai būtu platāks</span></div>';
+  document.body.appendChild(d);document.documentElement.style.overflow="hidden";drawCharts();
+  try{history.pushState({zfull:1},"");}catch(e){}
+}
+function closeFull(fromPop){const d=$("#zfull");if(!d)return;d.remove();CH.full=false;document.documentElement.style.overflow="";if(!fromPop){try{if(history.state&&history.state.zfull)history.back();}catch(e){}}drawCharts();}
+window.addEventListener("popstate",()=>{if(CH.full)closeFull(true);});
+window.addEventListener("resize",()=>{if(CH.full){closeFull(true);openFull();}});
+(function(){ /* pan, pinch, tap, long-press on charts */
+  const G={pts:new Map(),el:null,lp:null,moved:false,fired:false};
+  const geo=()=>{const r=G.el.getBoundingClientRect(),W=+G.el.dataset.w||600;return{left:r.left+42/W*r.width,w:(W-56)/W*r.width};};
+  const snap=()=>{const p=[...G.pts.values()];G.x0=CH.x0;G.x1=CH.x1;if(p.length===1)G.sx=p[0].x;if(p.length>=2){G.d0=Math.abs(p[0].x-p[1].x)||1;G.cx=(p[0].x+p[1].x)/2;}};
+  document.addEventListener("pointerdown",e=>{const el=e.target.closest(".zchart");if(!el)return;
+    G.el=el;try{el.setPointerCapture(e.pointerId);}catch(x){}G.pts.set(e.pointerId,{x:e.clientX,y:e.clientY,ox:e.clientX,oy:e.clientY});
+    if(G.pts.size===1){G.moved=false;G.fired=false;clearTimeout(G.lp);G.lp=setTimeout(()=>{if(!G.moved&&G.pts.size===1&&!CH.full){G.fired=true;G.pts.clear();if(navigator.vibrate)try{navigator.vibrate(30);}catch(x){}openFull();}},600);}
+    else{clearTimeout(G.lp);G.moved=true;}
+    snap();});
+  document.addEventListener("pointermove",e=>{if(!G.pts.has(e.pointerId))return;const q=G.pts.get(e.pointerId);q.x=e.clientX;q.y=e.clientY;
+    if(Math.hypot(q.x-q.ox,q.y-q.oy)>7){G.moved=true;clearTimeout(G.lp);}
+    if(!G.moved||CH.ds.length<2)return;
+    const g=geo(),p=[...G.pts.values()],span0=G.x1-G.x0;
+    if(p.length===1){const sh=-(p[0].x-G.sx)/g.w*span0;CH.x0=G.x0+sh;CH.x1=G.x1+sh;}
+    else{const d=Math.abs(p[0].x-p[1].x)||1,f=G.d0/d,c=G.x0+((G.cx-g.left)/g.w)*span0;CH.x0=c-(c-G.x0)*f;CH.x1=c+(G.x1-c)*f;}
+    clampWin();drawCharts();e.preventDefault();},{passive:false});
+  const end=e=>{if(!G.pts.has(e.pointerId))return;
+    if(G.pts.size===1&&!G.moved&&!G.fired&&e.type==="pointerup"&&CH.ds.length){const g=geo();const i=Math.round(CH.x0+(e.clientX-g.left)/g.w*(CH.x1-CH.x0));CH.sel=(i>=0&&i<CH.ds.length&&CH.sel!==i)?i:null;drawCharts();}
+    G.pts.delete(e.pointerId);clearTimeout(G.lp);if(G.pts.size)snap();};
+  document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end);
+  document.addEventListener("wheel",e=>{const el=e.target.closest(".zchart");if(!el||CH.ds.length<2)return;e.preventDefault();G.el=el;const g=geo();
+    const c=CH.x0+((e.clientX-g.left)/g.w)*(CH.x1-CH.x0);zoomBy(e.deltaY>0?1.15:1/1.15,c);},{passive:false});
+  document.addEventListener("contextmenu",e=>{if(e.target.closest(".zchart"))e.preventDefault();});
+})();
 const DIST=[["eagle","Eagle vai labāk"],["birdie","Birdie"],["par","Par"],["bogey","Bogey"],["double","Double+"]];
 function holeTable(rs){
   const n=Math.max(...rs.map(r=>r.holeNos?Math.max(...r.holeNos):r.pars.length));
@@ -790,17 +867,31 @@ function finish(early){
     players:c.players.map(p=>({name:p.name,isMe:p.isMe,uid:p.uid||null,scores:idx.map(i=>p.scores[i])}))});
   if(c.memberUids)r.memberUids=c.memberUids;if(c.ownerUid)r.ownerUid=c.ownerUid;if(c.startedAt)r.startedAt=c.startedAt;
   if(nos)r.holeNos=nos;else delete r.holeNos;
+  if(!c.editOf)r.startHole=c.nos?c.nos[0]-1:0;
   const wasEdit=!!c.editOf;
   S.current=null;S.ui.missing=null;S.ui.confirmAbort=false;
   Store.saveRound(r);Store.saveCurrent(true);
   if(wasEdit){S.ui.openRound=r.id;setTab("hist");toast("Izmaiņas saglabātas");return;}
   S.ui.finished=r.id;render();window.scrollTo(0,0);
 }
+function playAgain(id){
+  if(S.current){toast("Vispirms pabeidz vai pārtrauc aktīvo spēli");return;}
+  const r=S.rounds.find(x=>x.id===id);if(!r)return;
+  let c=S.courses.find(x=>x.id===r.courseId)||S.courses.find(x=>x.name.toLowerCase()===String(r.courseName).toLowerCase());
+  if(!c){if(r.holeNos){toast("Šis laukums vairs nav sarakstā");return;}
+    c={id:r.courseId||mkId(),name:r.courseName,location:"",createdAt:new Date().toISOString(),holes:r.pars.map(p=>({par:p,dist:0}))};Store.saveCourse(c);}
+  let pls=r.players.map(p=>({name:p.isMe?(S.profile.myName||p.name):p.name,isMe:!!p.isMe,uid:p.isMe?S.uid:(p.uid||null)}));
+  if(!pls.some(p=>p.isMe))pls.unshift({name:S.profile.myName||"Es",isMe:true,uid:S.uid});
+  pls.sort((a,b)=>(b.isMe?1:0)-(a.isMe?1:0));
+  S.ui.again=null;S.ui.openRound=null;S.ui.finished=null;
+  S.ui.sel.course=c.id;S.ui.sel.start=Math.max(0,Math.min(r.startHole||0,c.holes.length-1));S.ui.newPlayers=pls;
+  setTab("play");startGame();toast("Jauns raunds: "+c.name+((r.startHole||0)?" · no "+(S.current?NO(S.current,0):1)+". groza":""));
+}
 function editRound(id){
   if(S.current){toast("Vispirms pabeidz vai pārtrauc aktīvo spēli");return;}
   const r=S.rounds.find(x=>x.id===id);if(!r)return;
   const course=S.courses.find(x=>x.id===r.courseId);
-  const keep={};["source","example","memberUids","ownerUid","startedAt"].forEach(f=>{if(r[f]!=null)keep[f]=r[f];});
+  const keep={};["source","example","memberUids","ownerUid","startedAt","startHole"].forEach(f=>{if(r[f]!=null)keep[f]=r[f];});
   S.current={id:mkId(),editOf:r.id,editDate:r.date,keep,courseId:r.courseId,courseName:r.courseName,pars:r.pars.slice(),
     dists:r.pars.map((_,i)=>{const h=course&&course.holes[HN(r,i)-1];return h?h.dist||0:0;}),
     nos:r.holeNos?r.holeNos.slice():null,players:clone(r.players),hole:0,startedAt:new Date().toISOString()};
@@ -842,12 +933,20 @@ document.addEventListener("click",ev=>{
     case"abort":S.ui.confirmAbort=true;render();break;
     case"abortNo":S.ui.confirmAbort=false;render();break;
     case"abortYes":if(S.current&&S.current.live)Store.abortLive(S.current);if(S.current&&S.current.editOf){S.current=null;S.ui.confirmAbort=false;Store.saveCurrent(true);S.tab="hist";render();toast("Labošana atcelta");break;}S.current=null;S.ui.confirmAbort=false;S.ui.missing=null;Store.saveCurrent(true);render();toast("Spēle pārtraukta");break;
-    case"openRound":S.ui.openRound=S.ui.openRound===v?null:v;S.ui.confirmDel=false;render();break;
+    case"openRound":if(lpFired){lpFired=false;break;}S.ui.again=null;S.ui.openRound=S.ui.openRound===v?null:v;S.ui.confirmDel=false;render();break;
     case"delRound":S.ui.confirmDel=v;render();break;
     case"editRound":editRound(v);break;
     case"delRoundNo":S.ui.confirmDel=false;render();break;
     case"delRoundYes":Store.delRound(v);S.ui.confirmDel=false;S.ui.openRound=null;render();toast("Raunds izdzēsts");break;
-    case"histMore":S.ui.histN=(S.ui.histN||50)+50;render();break;
+    case"histMore":{const k=v||"histN";S.ui[k]=(S.ui[k]||50)+50;render();break;}
+    case"againAsk":S.ui.again=v;render();break;
+    case"againNo":S.ui.again=null;render();break;
+    case"againYes":playAgain(v);break;
+    case"zoomIn":zoomBy(0.6);break;
+    case"zoomOut":zoomBy(1/0.6);break;
+    case"zoomAll":CH.x0=0;CH.x1=Math.max(0,CH.ds.length-1);CH.sel=null;drawCharts();break;
+    case"openFull":openFull();break;
+    case"closeFull":closeFull();break;
     case"period":S.ui.period=v;render();break;
     case"progTo":S.ui.progCourse=v;render();window.scrollTo(0,0);break;
     case"newCourse":S.tab="course";S.ui.edit=blankCourse(9);S.ui.editErr=null;render();window.scrollTo(0,0);break;
@@ -907,7 +1006,7 @@ document.addEventListener("submit",ev=>{
 /* ---------- long press on suggested players ---------- */
 let lpTimer=null,lpFired=false,lpXY=null;
 document.addEventListener("pointerdown",ev=>{const b=ev.target.closest(".lp");if(!b)return;lpFired=false;lpXY=[ev.clientX,ev.clientY];clearTimeout(lpTimer);
-  lpTimer=setTimeout(()=>{lpFired=true;S.ui.hideAsk=b.dataset.v;render();if(navigator.vibrate)try{navigator.vibrate(30);}catch(e){}},550);});
+  lpTimer=setTimeout(()=>{lpFired=true;if(b.classList.contains("lp-round")){S.ui.again=b.dataset.v;S.ui.openRound=null;}else S.ui.hideAsk=b.dataset.v;render();if(navigator.vibrate)try{navigator.vibrate(30);}catch(e){}},550);});
 ["pointerup","pointercancel","pointerleave"].forEach(t=>document.addEventListener(t,()=>clearTimeout(lpTimer),true));
 document.addEventListener("pointermove",ev=>{if(lpXY&&Math.hypot(ev.clientX-lpXY[0],ev.clientY-lpXY[1])>10)clearTimeout(lpTimer);});
 document.addEventListener("contextmenu",ev=>{if(ev.target.closest(".lp"))ev.preventDefault();});
