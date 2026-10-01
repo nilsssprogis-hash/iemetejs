@@ -42,6 +42,14 @@ try {
       log("ID skaitītāja lasīšana OK", cnt.exists() ? cnt.data().next : "(vēl nav)");
       const byName = await getDocs(query(collection(db, "users"), where("pid", "==", "9999")));
       log("meklēšana pēc ID OK", byName.size);
+      const cid = "smoke-" + uid;
+      await setDoc(doc(db, "courses", cid), { name: "Testa kopīgais laukums", ownerUid: uid, holes: [{ par: 3, dist: 0 }] });
+      await setDoc(doc(db, "courses", cid), { name: "Testa kopīgais laukums", ownerUid: uid, holes: [{ par: 3, dist: 50 }] });
+      const steal = await setDoc(doc(db, "courses", cid), { name: "x", ownerUid: "kāds-cits", holes: [] }).then(() => "ATĻAUTS (slikti)", e => e.code);
+      log("kopīgā laukuma izveide/labošana OK; īpašnieka maiņa:", steal);
+      if (steal === "ATĻAUTS (slikti)") throw new Error("noteikumi atļauj mainīt laukuma īpašnieku");
+      await deleteDoc(doc(db, "courses", cid));
+      log("kopīgā laukuma dzēšana OK");
       await deleteDoc(doc(db, "rounds", rid));
       await deleteDoc(doc(db, "users", uid, "courses", "t1"));
       log("dzēšana OK");

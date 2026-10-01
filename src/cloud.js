@@ -65,9 +65,20 @@ if (config && config.apiKey) try {
     leaveRound: (id, uid) => updateDoc(doc(db, "rounds", id), { memberUids: arrayRemove(uid) }),
     delRound: id => deleteDoc(doc(db, "rounds", id)),
 
+    // Kopīgi laukumi: redz visi, izveido/dzēš īpašnieks, labot var jebkurš (īpašnieks nemainās)
+    listenShared(cb, err) {
+      return onSnapshot(collection(db, "courses"), s => cb(s.docs.map(d => ({ ...d.data(), id: d.id }))), err);
+    },
+    setShared: c => setDoc(doc(db, "courses", c.id), noId(c)),
+    delShared: id => deleteDoc(doc(db, "courses", id)),
+    sharedExists: id => getDoc(doc(db, "courses", id)).then(s => s.exists()),
+
     async bulk(uid, courses, rounds, progress) {
+      // laukumus raksta pa vienam (ja tāds jau ir kopīgajā sarakstā, to izlaiž)
+      for (const c of courses) { try { await setDoc(doc(db, "courses", c.id), noId({ ...c, ownerUid: c.ownerUid || uid })); } catch (e) {} }
+      courses = [];
       let b = writeBatch(db), n = 0, done = 0;
-      const total = courses.length + rounds.length;
+      const total = rounds.length;
       const flush = async () => {
         if (!n) return;
         await b.commit(); done += n; n = 0; b = writeBatch(db);
