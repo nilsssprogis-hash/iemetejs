@@ -206,6 +206,27 @@ details summary{cursor:pointer;color:var(--muted);padding:4px 0}
 @media (prefers-reduced-motion:no-preference){.stepper .val{transition:background .15s}.toast{animation:up .2s ease-out}@keyframes up{from{transform:translate(-50%,8px);opacity:0}}}
 
 /* ---- colour layer ---- */
+.actionbar{position:sticky;bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 8px);z-index:4;
+  background:color-mix(in srgb,var(--bg) 92%,transparent);padding:8px 0 2px;margin:-8px 0 -2px;
+  box-shadow:0 -10px 14px -10px color-mix(in srgb,var(--bg) 80%,transparent)}
+.newgame-head h1{font-size:28px}
+.plist.many{gap:8px}
+.plist.many .pl{padding:8px 12px}
+.plist.many .stepper{gap:6px}
+.plist.many .stepper button{width:44px;height:44px;font-size:22px}
+.plist.many .stepper .val{width:54px;height:54px;font-size:32px;border-radius:14px}
+.plist.lots{gap:6px}
+.plist.lots .pl{padding:4px 10px}
+.plist.lots .pl-name{font-size:15px}
+.plist.lots .stepper button{width:38px;height:38px;font-size:20px}
+.plist.lots .stepper .val{width:44px;height:44px;font-size:26px;border-radius:12px}
+.plist.lots .pl-tot{font-size:12px}
+.lots-head .hole-head{padding:6px 14px}
+.lots-head .hole-head .hole-no{font-size:40px}
+.lots-head .strip .pill{width:32px;height:32px;font-size:15px}
+.hole-head.compact{padding:10px 14px}
+.hole-head.compact .hole-no{font-size:52px}
+.hole-head.compact::after{width:80px;height:80px;border-width:10px;right:-24px;top:-24px}
 .volsel{cursor:pointer}
 .pl.voltarget{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
 .volbadge{white-space:nowrap;font-size:11px;font-weight:700;letter-spacing:.04em;color:color-mix(in srgb,var(--accent) 45%,var(--ink));margin-bottom:2px}
@@ -516,7 +537,7 @@ function vPlay(){
   const csel=S.courses.find(c=>c.id===sel);
   const signCard=window.Cloud&&S.mode==="local"?'<div class="card spread"><span class="small">Pieraksties, lai kopīgās spēles redzētu arī draugi.</span><button class="btn primary" data-act="authOpen">Pierakstīties</button></div>':'';
   const open=!!S.ui.pickOpen;
-  return signCard+'<div class="stack"><div class="eyebrow">Jauna spēle</div><h1>Kur šodien met?</h1></div>'+
+  return signCard+'<div class="newgame-head"><div class="eyebrow">Jauna spēle</div><h1>Kur šodien met?</h1></div>'+
   '<section class="stack"><h2>Laukums</h2><div class="combo'+(open?' open':'')+'">'+
   '<button class="combo-btn" data-act="togglePick" aria-expanded="'+open+'"><span><span class="t">'+(csel?esc(csel.name):'Izvēlies laukumu')+'</span>'+(csel?'<br><span class="muted small">'+csel.holes.length+' grozi · par '+sum(csel.holes.map(h=>h.par))+(csel.location?' · '+esc(csel.location):'')+'</span>':'')+'</span><span class="chev" aria-hidden="true"></span></button>'+
   (open?'<div class="combo-panel"><input type="search" id="courseQ" placeholder="Meklēt laukumu…" autocomplete="off" value="'+esc(S.ui.courseQ||"")+'"><div class="pick" id="courseList">'+courseListHTML(sel)+'</div></div>':'')+
@@ -528,7 +549,7 @@ function vPlay(){
   '<button class="btn ghost wide" data-act="addOpen">+ Pievienot spēlētāju (vārds vai ID)</button>'+
   (S.mode==="fb"&&S.profile.pid?'<p class="small muted" style="margin:0">Tavs spēlētāja ID: <b class="num" style="font-size:17px;color:var(--ink)">#'+esc(S.profile.pid)+'</b> — pasaki to draugiem, lai viņi tevi pievienotu.</p>':'')+'</section>'+
   (S.ui.addOpen?addSheet():'')+
-  '<button class="btn primary wide" data-act="start" style="min-height:54px;font-size:17px">Sākt spēli</button>';
+  '<div class="actionbar"><button class="btn primary wide" data-act="start" style="min-height:54px;font-size:17px">Sākt spēli</button></div>';
 }
 /* ---- add-player sheet (sits at the top so the keyboard never covers it) ---- */
 function addSheet(){
@@ -590,12 +611,12 @@ function vScoring(){
   const last=h===played-1;
   const miss=S.ui.missing;
   return '<div class="spread"><div class="eyebrow">'+(ed?'Labo raundu · ':'')+esc(c.courseName)+(c.live&&(c.memberUids||[]).length>1?' <span class="livechip">● Kopīga spēle</span>':'')+'</div><span class="small muted">'+(h+1)+'. no '+played+'</span></div>'+
-  '<div class="hole-head"><div class="hole-no">'+NO(c,h)+'</div><div class="hole-meta"><span class="eyebrow">Grozs</span><span>Par <b>'+par+'</b>'+(dist?' · <b>'+dist+'</b> m':'')+'</span></div></div>'+
-  '<div class="strip" role="list">'+strip+'</div>'+
-  '<div class="stack">'+rows+'</div>'+
+  '<div class="'+(c.players.length>=6?'lots-head':'')+'"><div class="hole-head'+(c.players.length>=4?' compact':'')+'"><div class="hole-no">'+NO(c,h)+'</div><div class="hole-meta"><span class="eyebrow">Grozs</span><span>Par <b>'+par+'</b>'+(dist?' · <b>'+dist+'</b> m':'')+'</span></div></div>'+
+  '<div class="strip" role="list">'+strip+'</div></div>'+
+  '<div class="stack plist'+(c.players.length>=4?' many':'')+(c.players.length>=6?' lots':'')+'">'+rows+'</div>'+
   (miss?'<div class="warn">Nav ievadīti metieni: '+esc(miss)+'. Aizpildi tos, tad varēsi pabeigt.</div>':'')+
-  '<div class="navrow"><button class="btn ghost" data-act="prevHole"'+(h===0?' disabled':'')+'>← Atpakaļ</button>'+
-  (last?'<button class="btn accent" data-act="finish">'+(ed?'Saglabāt izmaiņas':'Pabeigt spēli')+'</button>':'<button class="btn primary" data-act="nextHole">Nākamais grozs →</button>')+'</div>'+
+  '<div class="actionbar"><div class="navrow"><button class="btn ghost" data-act="prevHole"'+(h===0?' disabled':'')+'>← Atpakaļ</button>'+
+  (last?'<button class="btn accent" data-act="finish">'+(ed?'Saglabāt izmaiņas':'Pabeigt spēli')+'</button>':'<button class="btn primary" data-act="nextHole">Nākamais grozs →</button>')+'</div></div>'+
   (ed?(S.ui.confirmAbort?'<div class="confirm"><span>Atmest izmaiņas? Saglabātais raunds paliks nemainīts.</span><button class="btn danger" data-act="abortYes">Atmest</button><button class="btn ghost" data-act="abortNo">Turpināt labot</button></div>':'<div class="row" style="justify-content:space-between"><button class="link" data-act="finish">Saglabāt izmaiņas tagad</button><button class="link" data-act="abort">Atcelt labošanu</button></div>'):
   S.ui.confirmAbort?'<div class="confirm"><span>'+(c.live&&c.ownerUid!==S.uid?'Iziet no šīs spēles? Pārējie turpinās bez tevis.':c.live&&(c.memberUids||[]).length>1?'Dzēst šo spēli visiem spēlētājiem?':'Dzēst šo spēli bez saglabāšanas?')+'</span><button class="btn danger" data-act="abortYes">'+(c.live&&c.ownerUid!==S.uid?'Iziet':'Dzēst')+'</button><button class="btn ghost" data-act="abortNo">Atcelt</button></div>':
   '<div class="row" style="justify-content:space-between"><button class="link" data-act="finishEarly">Pabeigt tagad</button><button class="link" data-act="abort">'+(c.live&&c.ownerUid!==S.uid?'Iziet no spēles':'Pārtraukt spēli')+'</button></div>');
@@ -950,7 +971,7 @@ window.addEventListener("iemetejsVolume",e=>{const dir=e.dir||(e.detail&&e.detai
     }else{ /* up the list: previous player, stops at the first one */
       if(i>0){S.ui.volP=i-1;buzz(150);}else{buzz([60,60,60]);}
     }
-    render();window.scrollTo({top:0});return;}
+    render();const vt=document.querySelector(".pl.voltarget");if(vt)vt.scrollIntoView({block:"nearest"});else window.scrollTo({top:0});return;}
   const pi=volTarget();scoreAdj(pi,dir==="up"?"inc":"dec");buzz(dir==="up"?30:[20,60,20]);render();});
 function confirmHole(){const c=S.current;if(!c)return;const h=c.hole;c.players.forEach((p,i)=>{if(p.scores[h]==null){p.scores[h]=c.pars[h];Store.cell(i,h,c.pars[h]);}});}
 function finish(early){
