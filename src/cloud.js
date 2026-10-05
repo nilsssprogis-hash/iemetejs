@@ -10,7 +10,7 @@ import {
 import {
   initializeFirestore, persistentLocalCache, persistentSingleTabManager, memoryLocalCache,
   doc, setDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot,
-  getDocs, writeBatch, arrayRemove, limit, documentId, runTransaction, orderBy, startAt, endAt, getDoc
+  getDocs, writeBatch, arrayRemove, arrayUnion, limit, documentId, runTransaction, orderBy, startAt, endAt, getDoc
 } from "firebase/firestore";
 
 if (config && config.apiKey) try {
@@ -60,6 +60,8 @@ if (config && config.apiKey) try {
     signIn: (email, pass) => signInWithEmailAndPassword(auth, email.trim(), pass),
     signOut: () => { try { if (NS() && NS().setKV) NS().setKV("authMirror", ""); } catch (e) {} return signOut(auth); },
     reset: email => sendPasswordResetEmail(auth, email.trim()),
+    idToken: () => auth && auth.currentUser ? auth.currentUser.getIdToken() : Promise.reject(new Error("nav pierakstījies")),
+    addToken: (uid, token) => setDoc(doc(db, "users", uid), { fcmTokens: arrayUnion(token) }, { merge: true }),
 
     listenProfile(uid, cb, err) {
       return onSnapshot(doc(db, "users", uid), s => cb(s.exists() ? s.data() : null), err);

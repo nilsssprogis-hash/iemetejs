@@ -422,7 +422,7 @@ const Store={
     S.courses=[];S.rounds=[];S.current=null;
     S.profile={myName:u.displayName||(local&&local.profile&&local.profile.myName)||"Es",friends:[],hiddenFriends:(local&&local.profile&&local.profile.hiddenFriends)||[],email:u.email};
     const onErr=e=>{console.warn(e);toast("Sinhronizācijas kļūda: "+(e&&e.code||e));};
-    Cloud.listenProfile(u.uid,p=>{if(p){S.profile.myName=p.name||S.profile.myName;S.profile.friends=p.friends||[];if(p.hiddenFriends)S.profile.hiddenFriends=p.hiddenFriends;S.profile.hiddenCourses=p.hiddenCourses||[];S.profile.pid=p.pid||"";this.mergeCourses();this.watchFriends();}
+    Cloud.listenProfile(u.uid,p=>{if(p){S.profile.myName=p.name||S.profile.myName;S.profile.friends=p.friends||[];if(p.hiddenFriends)S.profile.hiddenFriends=p.hiddenFriends;S.profile.hiddenCourses=p.hiddenCourses||[];S.profile.notify=p.notify!==false;S.profile.pid=p.pid||"";this.mergeCourses();this.watchFriends();}
       if(!(p&&p.pid))this.ensurePid();render();},onErr);
     window.addEventListener("online",()=>this.ensurePid());
     this.shared=[];this.priv=[];
@@ -430,6 +430,11 @@ const Store={
     Cloud.listenCourses(u.uid,cs=>{this.priv=cs;this.mergeCourses();this.migrateCourses();},onErr);
     Cloud.listenRounds(u.uid,docs=>this.onRounds(docs),onErr);
     window.addEventListener("online",render);window.addEventListener("offline",render);
+    window.addEventListener("online",()=>this.processNotify());setTimeout(()=>this.processNotify(),3000);
+    if(window.NativeStore&&NativeStore.pushInit)NativeStore.pushInit(
+      tok=>{try{if(localStorage.getItem("kedes.fcm")!==tok){Cloud.addToken(u.uid,tok).then(()=>{try{localStorage.setItem("kedes.fcm",tok);}catch(e){}}).catch(()=>{});}}catch(e){}},
+      rid=>{S.ui.openRound=rid;S.ui.finished=null;setTab("hist");},
+      n=>{const t=(n&&n.title)||"";toast(t+(n&&n.body?" — "+n.body:""));});
     const mk="kedes.migrated."+u.uid;
     let migrated=false;try{migrated=!!localStorage.getItem(mk);}catch(e){}
     if(local&&!migrated&&((local.rounds||[]).length||(local.courses||[]).length)){
@@ -476,6 +481,21 @@ const Store={
     live.forEach(r=>this.seenLive.add(r.id));
     render();
   },
+  queueNotify(id){if(!window.PUSH_URL)return;let q=[];try{q=JSON.parse(localStorage.getItem("kedes.notifyQ")||"[]");}catch(e){}
+    if(!q.some(x=>x.id===id))q.push({id,n:0,t:Date.now()});try{localStorage.setItem("kedes.notifyQ",JSON.stringify(q));}catch(e){}this.processNotify();},
+  async processNotify(){ /* send "round finished" notification via the push server; retries until the round has synced */
+    if(this.nBusy){this.nAgain=true;return;}
+    if(!window.PUSH_URL||S.mode!=="fb"||!navigator.onLine||!Cloud.idToken)return;this.nBusy=true;
+    try{let q=[];try{q=JSON.parse(localStorage.getItem("kedes.notifyQ")||"[]");}catch(e){}
+      const keep=[];
+      for(const it of q){if(Date.now()-it.t>2*864e5)continue;let ok=false,retry=true;
+        try{const tok=await Cloud.idToken();const r=await fetch(window.PUSH_URL+"/notify",{method:"POST",headers:{authorization:"Bearer "+tok,"content-type":"application/json"},body:JSON.stringify({roundId:it.id})});
+          if(r.ok)ok=true;else if(r.status!==409&&r.status<500)retry=false;}catch(e){}
+        if(!ok&&retry){it.n++;if(it.n<40)keep.push(it);}}
+      try{localStorage.setItem("kedes.notifyQ",JSON.stringify(keep));}catch(e){}
+      if(keep.length){clearTimeout(this.nT);this.nT=setTimeout(()=>this.processNotify(),15000);}
+    }finally{this.nBusy=false;
+      if(this.nAgain){this.nAgain=false;setTimeout(()=>this.processNotify(),500);}}},
   liveCur(r){return{id:r.id,courseId:r.courseId,courseName:r.courseName,pars:r.pars,dists:r.dists||r.pars.map(()=>0),nos:r.nos||null,players:r.players,hole:0,startedAt:r.startedAt,live:true,ownerUid:r.ownerUid,memberUids:r.memberUids};},
   startLive(c){if(S.mode!=="fb")return;c.live=true;c.ownerUid=S.uid;c._t=Date.now();Cloud.setRound(c.id,toDoc(c,"live")).catch(e=>this.werr(e));},
   cell(pi,h,v){const c=S.current;if(S.mode!=="fb"||!c||!c.live||c.editOf)return;Cloud.updateRound(c.id,{["cells.p"+pi+"_h"+h]:v,updatedAt:Date.now()}).catch(e=>this.werr(e));},
@@ -505,7 +525,7 @@ const Store={
   saveRound(r){this.upsert(S.rounds,r);if(S.mode==="fb")return Cloud.setRound(r.id,toDoc(r,"done")).catch(e=>this.werr(e));if(S.mode==="cloud")return this.q(()=>this.base.collection("rounds").doc(r.id).set(clone(r)));this.saveLocal();return Promise.resolve();},
   delRound(id){const old=S.rounds.find(r=>r.id===id);S.rounds=S.rounds.filter(r=>r.id!==id);
     if(S.mode==="fb"){const others=((old&&old.memberUids)||[]).filter(u=>u!==S.uid);return (others.length?Cloud.leaveRound(id,S.uid):Cloud.delRound(id)).catch(e=>this.werr(e));}if(S.mode==="cloud")return this.q(()=>this.base.collection("rounds").doc(id).delete());this.saveLocal();return Promise.resolve();},
-  saveProfile(){if(S.mode==="fb")return Cloud.saveProfile(S.uid,{name:S.profile.myName,nameLower:fold(S.profile.myName),friends:S.profile.friends||[],hiddenFriends:S.profile.hiddenFriends||[],hiddenCourses:S.profile.hiddenCourses||[]}).catch(e=>this.werr(e));if(S.mode==="cloud")return this.q(()=>this.base.set(clone(S.profile)));this.saveLocal();return Promise.resolve();},
+  saveProfile(){if(S.mode==="fb")return Cloud.saveProfile(S.uid,{name:S.profile.myName,nameLower:fold(S.profile.myName),friends:S.profile.friends||[],hiddenFriends:S.profile.hiddenFriends||[],hiddenCourses:S.profile.hiddenCourses||[],notify:S.profile.notify!==false}).catch(e=>this.werr(e));if(S.mode==="cloud")return this.q(()=>this.base.set(clone(S.profile)));this.saveLocal();return Promise.resolve();},
   saveCurrent(now){
     clearTimeout(this.curTimer);if(S.mode==="fb")return;
     const go=()=>{if(S.mode==="cloud"){const snap=S.current?clone(S.current):null;this.q(()=>snap?this.base.collection("state").doc("current").set({round:snap}):this.base.collection("state").doc("current").delete());}else this.saveLocal();};
@@ -946,6 +966,7 @@ function accountSection(){
   const fr=(S.friends||[]);
   return '<section class="card stack"><h2>Konts un draugi</h2>'+
   '<div class="spread"><div><b>'+esc(S.profile.myName||"")+'</b>'+(S.profile.pid?' <span class="num" style="font-size:18px">#'+esc(S.profile.pid)+'</span>':'')+'<br><span class="small muted">'+esc(S.profile.email||"")+'</span></div><button class="btn ghost" data-act="signOut">Izrakstīties</button></div>'+
+  (window.PUSH_ENABLED?'<label class="tog"><input type="checkbox" id="prefNotify" data-notify="1"'+(S.profile.notify!==false?' checked':'')+'><span><b>Paziņojumi par pabeigtiem raundiem</b><br><span class="small muted">Kad draugs pabeidz kopīgu raundu, saņemsi paziņojumu ar rezultātiem — arī tad, ja Iemetējs ir aizvērts.</span></span></label>':'')+
   '<div class="eyebrow">Draugi</div>'+
   (fr.length?'<div class="chips">'+fr.map(f=>'<span class="chip acc">'+esc(f.name)+' <button class="x" data-act="rmAcc" data-v="'+f.uid+'" aria-label="Noņemt '+esc(f.name)+'">×</button></span>').join("")+'</div>':'<p class="small muted" style="margin:0">Vēl nav draugu. Draugi parādīsies šeit, kad pievienosi viņus spēlei pēc vārda vai ID sadaļā Spēle.</p>')+
   '</section>';
@@ -1056,6 +1077,7 @@ function finish(early){
   const wasEdit=!!c.editOf;
   S.current=null;S.ui.missing=null;S.ui.confirmAbort=false;
   Store.saveRound(r);Store.saveCurrent(true);
+  if(!wasEdit&&S.mode==="fb"&&(r.memberUids||[]).some(u=>u&&u!==S.uid))Store.queueNotify(r.id);
   if(wasEdit){S.ui.openRound=r.id;setTab("hist");toast("Izmaiņas saglabātas");return;}
   S.ui.finished=r.id;render();window.scrollTo(0,0);
 }
@@ -1181,6 +1203,7 @@ document.addEventListener("input",ev=>{
 document.addEventListener("change",ev=>{
   const t=ev.target;
   if(t.dataset.udall&&S.ui.udisc){S.ui.udisc.all=t.checked;render();return;}
+  if(t.dataset.notify){S.profile.notify=t.checked;Store.saveProfile();toast(t.checked?"Paziņojumi ieslēgti":"Paziņojumi izslēgti");return;}
   if(t.dataset.pref){prefs[t.dataset.pref]=t.checked;savePrefs();devState={lock:null,vol:null};deviceSync();render();return;}
   if(t.dataset.change==="progCourse"){S.ui.progCourse=t.value;render();}
   if(t.dataset.change==="period"&&t.value){S.ui.period=t.value;render();}

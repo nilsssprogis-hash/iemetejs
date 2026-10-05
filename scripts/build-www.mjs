@@ -39,7 +39,7 @@ const head = `<!doctype html><html lang="lv"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="stylesheet" href="fonts.css">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
-<script>window.APP_VERSION=${JSON.stringify(process.env.APP_VERSION||"dev")};window.addEventListener("error",function(e){if(/cloud\.js/.test(e.filename||""))window.CloudError=e.message;});</script>
+<script>window.APP_VERSION=${JSON.stringify(process.env.APP_VERSION||"dev")};window.PUSH_URL=${JSON.stringify(process.env.PUSH_URL||"")};window.PUSH_ENABLED=${process.env.PUSH_ENABLED==="1"?"true":"false"};window.addEventListener("error",function(e){if(/cloud\.js/.test(e.filename||""))window.CloudError=e.message;});</script>
 <script src="native.js"></script>
 <script src="cloud.js"></script>
 </head><body>
