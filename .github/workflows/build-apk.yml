@@ -46,8 +46,15 @@ jobs:
           npx --yes wrangler@3 deploy push-worker/worker.js --name iemetejs-push --compatibility-date 2024-09-23
           printf '%s' "$FIREBASE_SA" | npx --yes wrangler@3 secret put FIREBASE_SA --name iemetejs-push
           SUB=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" | python3 -c "import json,sys;print(json.load(sys.stdin)['result']['subdomain'])")
-          echo "Serveris: https://iemetejs-push.$SUB.workers.dev"
-          curl -s "https://iemetejs-push.$SUB.workers.dev/health"
+          URL="https://iemetejs-push.$SUB.workers.dev"
+          echo "Serveris: $URL"
+          for i in $(seq 1 20); do
+            if curl -sf "$URL/health"; then echo; break; fi
+            echo "gaidu sertifikātu ($i)..."; sleep 15
+          done
+          curl -sf "$URL/health"
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$URL/notify" -H "content-type: application/json" -d '{"roundId":"x"}')
+          echo "bez atļaujas: $CODE"; test "$CODE" = "401"
 
   build:
     runs-on: ubuntu-latest
