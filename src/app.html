@@ -520,7 +520,7 @@ const doneRounds=()=>S.rounds.filter(r=>r.players&&r.players.length).sort((a,b)=
 function friendNames(){const hid=(S.profile.hiddenFriends||[]);const seen=new Map(hid.map(h=>[h,null]));doneRounds().slice().reverse().forEach(r=>r.players.forEach(p=>{if(!p.isMe&&!seen.has(p.name.toLowerCase()))seen.set(p.name.toLowerCase(),p.name);}));return[...seen.values()].filter(Boolean);}
 const fold=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 function courseOpt(c,sel,lastD){const pb=bestOn(c.id);
-  return '<button class="opt" data-act="selCourse" data-v="'+c.id+'" aria-pressed="'+(c.id===sel)+'"><span><span class="t">'+esc(c.name)+'</span><br><span class="muted small">'+c.holes.length+' grozi · par '+sum(c.holes.map(h=>h.par))+(c.location?' · '+esc(c.location):'')+(lastD?' · pēdējoreiz '+fmtDate(lastD):'')+'</span></span>'+(pb!=null?'<span class="small muted">rekords <b class="num" style="font-size:17px;color:var(--ink)">'+rel(pb)+'</b></span>':'')+'</button>';}
+  return '<button class="opt" data-act="selCourse" data-v="'+c.id+'" aria-pressed="'+(c.id===sel)+'"><span><span class="t">'+esc(c.name)+'</span><br><span class="muted small">'+c.holes.length+' grozi · par '+sum(c.holes.map(h=>h.par))+(c.location?' · '+esc(c.location):'')+'</span></span>'+(pb!=null?'<span class="small muted">rekords <b class="num" style="font-size:17px;color:var(--ink)">'+rel(pb)+'</b></span>':'')+'</button>';}
 function courseListHTML(sel){
   const q=fold(S.ui.courseQ).trim();
   const last={};S.rounds.forEach(r=>{if(r.courseId&&(!last[r.courseId]||r.date>last[r.courseId]))last[r.courseId]=r.date;});
@@ -637,7 +637,10 @@ function startSel(id){
 }
 function lastCourseId(){const r=doneRounds().slice(-1)[0];if(r&&S.courses.some(c=>c.id===r.courseId))return r.courseId;return S.courses[0]&&S.courses[0].id;}
 const playsOf=id=>S.rounds.filter(r=>r.courseId===id).length;
-function bestOn(id){const rs=S.rounds.filter(r=>r.courseId===id);if(!rs.length)return null;return Math.min(...rs.map(r=>sum(meOf(r).scores)-roundPar(r)));}
+/* a round counts in statistics only if I played every hole of the course */
+function isFull(r){const me=r.players.find(p=>p.isMe);if(!me||!r.pars.length||me.scores.some(s=>s==null))return false;
+  const c=S.courses.find(x=>x.id===r.courseId);return c?r.pars.length>=c.holes.length:!r.holeNos;}
+function bestOn(id){const rs=S.rounds.filter(r=>r.courseId===id&&isFull(r));if(!rs.length)return null;return Math.min(...rs.map(r=>sum(meOf(r).scores)-roundPar(r)));}
 
 function vScoring(){
   const c=S.current,h=c.hole,par=c.pars[h],dist=c.dists&&c.dists[h];
@@ -677,12 +680,12 @@ function lbSheet(c){
 function vFinished(r){
   if(!r){S.ui.finished=null;return vPlay();}
   const me=meOf(r),tot=sum(me.scores),d=tot-roundPar(r);
-  const prev=S.rounds.filter(x=>x.courseId===r.courseId&&x.id!==r.id&&x.pars.length===r.pars.length);
+  const prev=S.rounds.filter(x=>x.courseId===r.courseId&&x.id!==r.id&&x.pars.length===r.pars.length&&isFull(x));
   const prevBest=prev.length?Math.min(...prev.map(x=>sum(meOf(x).scores)-roundPar(x))):null;
-  const isPB=prev.length>0&&d<prevBest;
+  const isPB=isFull(r)&&prev.length>0&&d<prevBest;
   const b=me.scores.filter((s,i)=>s-r.pars[i]<0).length;
   return '<div class="card result"><div class="eyebrow">Spēle pabeigta · '+esc(r.courseName)+'</div>'+
-  (isPB?'<span class="pb">Jauns rekords šajā laukumā</span>':'')+
+  (isPB?'<span class="pb">Jauns rekords šajā laukumā</span>':'')+(!isFull(r)?'<span class="tag">daļējs raunds — netiek skaitīts statistikā</span>':'')+
   '<div class="row" style="align-items:flex-end;gap:16px"><span class="big">'+rel(d)+'</span><span class="muted">'+tot+' metieni · par '+roundPar(r)+'<br>'+b+' '+(b===1?'birdijs':'birdiji')+(prevBest!=null&&!isPB?' · rekords '+rel(prevBest):'')+'</span></div>'+
   (r.players.length>1?board(r):'')+scoreTable(r)+
   '<button class="btn primary wide" data-act="againYes" data-v="'+r.id+'" style="min-height:54px;font-size:17px">Jauna spēle</button>'+
@@ -718,7 +721,7 @@ function histList(rs,key){
     if(m!==lastM){lastM=m;head='<div class="eyebrow" style="margin-top:6px">'+MONTHS[d.getMonth()]+' '+d.getFullYear()+'</div>';}
     const me=meOf(r),dd=sum(me.scores)-roundPar(r),open=S.ui.openRound===r.id;
     const others=r.players.filter(p=>p!==me).map(p=>p.name);
-    return head+'<button class="hrow lp lp-round" data-act="openRound" data-v="'+r.id+'" aria-expanded="'+open+'"><span class="hdate"><b>'+d.getDate()+'</b><span>'+MON[d.getMonth()]+'</span></span><span class="hmain"><span class="t">'+esc(r.courseName)+'</span> '+(r.example?'<span class="tag">piemērs</span>':'')+'<br><span class="small muted">'+sum(me.scores)+' metieni'+(others.length?' · ar '+esc(others.join(", ")):'')+'</span></span><span class="sc '+relCls(dd)+'">'+rel(dd)+'</span></button>'+
+    return head+'<button class="hrow lp lp-round" data-act="openRound" data-v="'+r.id+'" aria-expanded="'+open+'"><span class="hdate"><b>'+d.getDate()+'</b><span>'+MON[d.getMonth()]+'</span></span><span class="hmain"><span class="t">'+esc(r.courseName)+'</span> '+(r.example?'<span class="tag">piemērs</span>':'')+(r.players.some(p=>p.isMe)&&!isFull(r)?' <span class="tag">daļējs</span>':'')+'<br><span class="small muted">'+sum(me.scores)+' metieni'+(others.length?' · ar '+esc(others.join(", ")):'')+'</span></span><span class="sc '+relCls(dd)+'">'+rel(dd)+'</span></button>'+
     (S.ui.again===r.id?'<div class="confirm again"><span>Spēlēt šo raundu vēlreiz? Laukums, spēlētāji un sākuma grozs būs tādi paši.</span><button class="btn primary" data-act="againYes" data-v="'+r.id+'">Spēlēt vēlreiz</button><button class="btn ghost" data-act="againNo">Atcelt</button></div>':'')+
     (open?'<div class="detail">'+scoreTable(r)+(S.ui.confirmDel===r.id?'<div class="confirm"><span>Dzēst šo raundu no vēstures?</span><button class="btn danger" data-act="delRoundYes" data-v="'+r.id+'">Dzēst</button><button class="btn ghost" data-act="delRoundNo">Atcelt</button></div>':'<div class="spread"><span class="small muted">'+fmtDate(r.date)+'</span><span class="row" style="gap:16px"><button class="btn ghost" data-act="againAsk" data-v="'+r.id+'">Spēlēt vēlreiz</button><button class="btn ghost" data-act="editRound" data-v="'+r.id+'">Labot</button><button class="link" data-act="delRound" data-v="'+r.id+'">Dzēst</button></span></div>')+'</div>':'');
   }).join("")+'</div>'+(rs.length>lim?'<button class="btn ghost wide" data-act="histMore" data-v="'+key+'">Rādīt vēl ('+Math.min(50,rs.length-lim)+' no '+(rs.length-lim)+')</button>':'');
@@ -727,7 +730,7 @@ const relCls=d=>d<=-2?"eagle":d<0?"birdie":d===0?"par":d<=3?"bogey":"double";
 
 /* ---- PROGRESS ---- */
 function vProg(){
-  const all=doneRounds().filter(r=>r.players.some(p=>p.isMe));
+  const all=doneRounds().filter(isFull);
   if(!all.length)return '<div class="stack"><div class="eyebrow">Progress</div><h1>Tava statistika</h1></div>'+emptyBox("Statistikai vajag spēles","Pēc katra pabeigta raunda šeit parādīsies vidējais rezultāts, rekordi, birdiju skaits un līkne, kas rāda, kā tu uzlabojies.",'<button class="btn primary" data-act="tab" data-v="play">Sākt spēli</button>'+(S.courses.length?'':'<button class="btn ghost" data-act="loadExample">Ielādēt piemēra datus</button>'));
   if(S.ui.progCourse==null)S.ui.progCourse="";
   const cid=S.ui.progCourse&&all.some(r=>r.courseId===S.ui.progCourse)?S.ui.progCourse:"";
