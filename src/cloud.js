@@ -3,7 +3,7 @@
 import config from "./firebase-config.js";
 import { initializeApp } from "firebase/app";
 import {
-  initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged,
+  initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged, onIdTokenChanged,
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
   sendPasswordResetEmail, updateProfile
 } from "firebase/auth";
@@ -14,21 +14,37 @@ import {
 } from "firebase/firestore";
 
 if (config && config.apiKey) try {
-  const app = initializeApp(config);
-  let auth;
-  try { auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence] }); }
-  catch (e) { window.CloudWarn = "auth: " + e.message; auth = initializeAuth(app, { persistence: inMemoryPersistence }); }
-  let db;
-  try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() }) }); }
-  catch (e) { window.CloudWarn = "firestore: " + e.message; db = initializeFirestore(app, { localCache: memoryLocalCache() }); }
+  // Pierakstīšanās sesija glabājas localStorage UN tās kopija telefona drošajā glabātuvē (Preferences),
+  // lai Android WebView atmiņas tīrīšana neizmestu lietotāju no konta.
+  const AUTH_KEY = "firebase:authUser:" + config.apiKey + ":[DEFAULT]";
+  const NS = () => window.NativeStore;
+  const restore = (async () => {
+    try {
+      if (localStorage.getItem(AUTH_KEY) || !NS() || !NS().getKV) return;
+      const saved = await Promise.race([NS().getKV("authMirror"), new Promise(r => setTimeout(() => r(null), 2500))]);
+      if (saved) { const o = JSON.parse(saved); if (o && o.k === AUTH_KEY && o.v) localStorage.setItem(AUTH_KEY, o.v); }
+    } catch (e) {}
+  })();
+  const mirror = () => setTimeout(() => {
+    try { const v = localStorage.getItem(AUTH_KEY); if (v && NS() && NS().setKV) NS().setKV("authMirror", JSON.stringify({ k: AUTH_KEY, v })); } catch (e) {}
+  }, 400);
 
-  let first = true, resolveReady;
+  let app, auth, db, first = true, resolveReady;
   const ready = new Promise(r => (resolveReady = r));
-  setTimeout(() => { if (first) { first = false; window.CloudWarn = "auth timeout"; resolveReady(auth.currentUser); } }, 8000);
-  onAuthStateChanged(auth, u => {
-    if (first) { first = false; resolveReady(u); }
-    else if (window.Cloud && window.Cloud.onAuthChange) window.Cloud.onAuthChange(u);
-  }, e => { window.CloudWarn = "auth: " + (e && e.message); });
+  restore.then(() => {
+    app = initializeApp(config);
+    try { auth = initializeAuth(app, { persistence: [browserLocalPersistence, indexedDBLocalPersistence, inMemoryPersistence] }); }
+    catch (e) { window.CloudWarn = "auth: " + e.message; auth = initializeAuth(app, { persistence: inMemoryPersistence }); }
+    try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() }) }); }
+    catch (e) { window.CloudWarn = "firestore: " + e.message; db = initializeFirestore(app, { localCache: memoryLocalCache() }); }
+    setTimeout(() => { if (first) { first = false; window.CloudWarn = "auth timeout"; resolveReady(auth.currentUser); } }, 20000);
+    onAuthStateChanged(auth, u => {
+      if (u) mirror();
+      if (first) { first = false; resolveReady(u); }
+      else if (window.Cloud && window.Cloud.onAuthChange) window.Cloud.onAuthChange(u);
+    }, e => { window.CloudWarn = "auth: " + (e && e.message); });
+    onIdTokenChanged(auth, u => { if (u) mirror(); });
+  }).catch(e => { window.CloudError = (e && e.message) || String(e); resolveReady(null); });
 
   const noId = o => { const { id, ...rest } = o; return rest; };
 
@@ -42,7 +58,7 @@ if (config && config.apiKey) try {
       return c.user;
     },
     signIn: (email, pass) => signInWithEmailAndPassword(auth, email.trim(), pass),
-    signOut: () => signOut(auth),
+    signOut: () => { try { if (NS() && NS().setKV) NS().setKV("authMirror", ""); } catch (e) {} return signOut(auth); },
     reset: email => sendPasswordResetEmail(auth, email.trim()),
 
     listenProfile(uid, cb, err) {

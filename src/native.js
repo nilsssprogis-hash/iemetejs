@@ -12,6 +12,11 @@
     save: function (json) {
       try { if (P.Preferences) P.Preferences.set({ key: KEY, value: json }); } catch (e) {}
     },
+    getKV: function (k) {
+      if (!P.Preferences) return Promise.resolve(null);
+      return P.Preferences.get({ key: k }).then(function (r) { return (r && r.value) || null; }).catch(function () { return null; });
+    },
+    setKV: function (k, v) { try { if (P.Preferences) return v ? P.Preferences.set({ key: k, value: v }) : P.Preferences.remove({ key: k }); } catch (e) {} return Promise.resolve(); },
     get hasDevice() { return !!((C.Plugins || {}).Iemetejs); },
     setLockScreen: function (on) { try { if (P.Iemetejs) return P.Iemetejs.setLockScreen({ enabled: !!on }); } catch (e) {} return Promise.resolve(); },
     setVolumeKeys: function (on) { try { if (P.Iemetejs) return P.Iemetejs.setVolumeKeys({ enabled: !!on }); } catch (e) {} return Promise.resolve(); },

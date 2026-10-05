@@ -684,7 +684,9 @@ function vFinished(r){
   (isPB?'<span class="pb">Jauns rekords šajā laukumā</span>':'')+
   '<div class="row" style="align-items:flex-end;gap:16px"><span class="big">'+rel(d)+'</span><span class="muted">'+tot+' metieni · par '+roundPar(r)+'<br>'+b+' '+(b===1?'birdijs':'birdiji')+(prevBest!=null&&!isPB?' · rekords '+rel(prevBest):'')+'</span></div>'+
   (r.players.length>1?board(r):'')+scoreTable(r)+
-  '<div class="row"><button class="btn primary" data-act="newGame">Jauna spēle</button><button class="btn ghost" data-act="tab" data-v="prog">Skatīt progresu</button></div></div>';
+  '<button class="btn primary wide" data-act="againYes" data-v="'+r.id+'" style="min-height:54px;font-size:17px">Jauna spēle</button>'+
+  '<p class="small muted" style="margin:0">Tas pats laukums, tie paši spēlētāji un tas pats sākuma grozs.</p>'+
+  '<div class="row"><button class="btn ghost" data-act="newGame">Cits laukums vai spēlētāji</button><button class="btn ghost" data-act="tab" data-v="prog">Skatīt progresu</button></div></div>';
 }
 
 function scoreTable(r){
