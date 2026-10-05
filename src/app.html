@@ -519,13 +519,14 @@ const roundPar=r=>sum(r.pars);
 const doneRounds=()=>S.rounds.filter(r=>r.players&&r.players.length).sort((a,b)=>a.date<b.date?-1:1);
 function friendNames(){const hid=(S.profile.hiddenFriends||[]);const seen=new Map(hid.map(h=>[h,null]));doneRounds().slice().reverse().forEach(r=>r.players.forEach(p=>{if(!p.isMe&&!seen.has(p.name.toLowerCase()))seen.set(p.name.toLowerCase(),p.name);}));return[...seen.values()].filter(Boolean);}
 const fold=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-function courseOpt(c,sel){const pb=bestOn(c.id);
-  return '<button class="opt" data-act="selCourse" data-v="'+c.id+'" aria-pressed="'+(c.id===sel)+'"><span><span class="t">'+esc(c.name)+'</span><br><span class="muted small">'+c.holes.length+' grozi · par '+sum(c.holes.map(h=>h.par))+(c.location?' · '+esc(c.location):'')+'</span></span>'+(pb!=null?'<span class="small muted">rekords <b class="num" style="font-size:17px;color:var(--ink)">'+rel(pb)+'</b></span>':'')+'</button>';}
+function courseOpt(c,sel,lastD){const pb=bestOn(c.id);
+  return '<button class="opt" data-act="selCourse" data-v="'+c.id+'" aria-pressed="'+(c.id===sel)+'"><span><span class="t">'+esc(c.name)+'</span><br><span class="muted small">'+c.holes.length+' grozi · par '+sum(c.holes.map(h=>h.par))+(c.location?' · '+esc(c.location):'')+(lastD?' · pēdējoreiz '+fmtDate(lastD):'')+'</span></span>'+(pb!=null?'<span class="small muted">rekords <b class="num" style="font-size:17px;color:var(--ink)">'+rel(pb)+'</b></span>':'')+'</button>';}
 function courseListHTML(sel){
   const q=fold(S.ui.courseQ).trim();
-  const list=S.courses.slice().sort((a,b)=>playsOf(b.id)-playsOf(a.id)||a.name.localeCompare(b.name,"lv"))
+  const last={};S.rounds.forEach(r=>{if(r.courseId&&(!last[r.courseId]||r.date>last[r.courseId]))last[r.courseId]=r.date;});
+  const list=S.courses.slice().sort((a,b)=>(last[b.id]||"").localeCompare(last[a.id]||"")||a.name.localeCompare(b.name,"lv"))
     .filter(c=>!q||q.split(/\s+/).every(w=>fold(c.name+" "+(c.location||"")).includes(w)));
-  return list.length?list.map(c=>courseOpt(c,sel)).join(""):'<p class="muted small" style="margin:4px 2px">Neviens laukums neatbilst “'+esc(S.ui.courseQ)+'”.</p>';
+  return list.length?list.map(c=>courseOpt(c,sel,last[c.id])).join(""):'<p class="muted small" style="margin:4px 2px">Neviens laukums neatbilst “'+esc(S.ui.courseQ)+'”.</p>';
 }
 
 /* ---------- toast ---------- */
@@ -686,7 +687,7 @@ function vFinished(r){
   (r.players.length>1?board(r):'')+scoreTable(r)+
   '<button class="btn primary wide" data-act="againYes" data-v="'+r.id+'" style="min-height:54px;font-size:17px">Jauna spēle</button>'+
   '<p class="small muted" style="margin:0">Tas pats laukums, tie paši spēlētāji un tas pats sākuma grozs.</p>'+
-  '<div class="row"><button class="btn ghost" data-act="newGame">Cits laukums vai spēlētāji</button><button class="btn ghost" data-act="tab" data-v="prog">Skatīt progresu</button></div></div>';
+  '</div>';
 }
 
 function scoreTable(r){
