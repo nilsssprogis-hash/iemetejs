@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "502072058916",
+    "project_id": "iemetejs-1de95",
+    "storage_bucket": "iemetejs-1de95.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:502072058916:android:ec9b4c9a7841c8b07924b1",
+        "android_client_info": {
+          "package_name": "lv.iemetejs.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDM5Axjfhsv_sQDFAj8wI4_29JFLIkXD_o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
