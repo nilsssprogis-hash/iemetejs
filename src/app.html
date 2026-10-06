@@ -259,6 +259,65 @@ main{padding-bottom:calc(var(--tabh) + 44px + env(safe-area-inset-bottom,0px))}
 .volsel{cursor:pointer}
 .pl.voltarget{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
 .volbadge{white-space:nowrap;font-size:11px;font-weight:700;letter-spacing:.04em;color:color-mix(in srgb,var(--accent) 45%,var(--ink));margin-bottom:2px}
+/* ---- scoring: everything on one screen ---- */
+main.fitv{padding-block:10px 0;overflow:hidden;gap:0}
+.scoring{display:flex;flex-direction:column;gap:8px;height:100%;min-height:0}
+.scoring .hole-head{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:10px 14px;flex:none}
+.scoring .hole-no{font-size:56px;line-height:.85}
+.scoring .hole-meta{padding:0;min-width:0}
+.scoring .hole-meta .eyebrow{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scoring .hole-meta>span:last-child{font-size:17px}
+.scoring .hole-head::after{width:90px;height:90px;border-width:11px;right:-30px;top:-30px}
+.scoring .lbbtn{position:relative;z-index:1;align-self:center}
+.scoring .livechip{font-size:11px}
+.scoring .strip{flex:none;padding:0 2px 2px}
+.scoring .plist{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.scoring .pl{flex:1 1 0;min-height:52px;max-height:112px;padding:6px 12px;gap:8px;container-type:size}
+.scoring .pl-info{min-width:0}
+.scoring.s2 .pl-name,.scoring.s3 .pl-name{flex:0 1 auto;min-width:0}.scoring.s2 .pl-tot,.scoring.s3 .pl-tot{flex:none}
+.scoring .pl-name{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scoring .pl-tot{font-size:13px;white-space:nowrap}
+.scoring .pl-tot b{font-size:17px;color:var(--ink)}
+.scoring .volbadge{display:inline;font-size:11px;margin:0}
+.scoring .stepper{gap:8px}
+.scoring .stepper button{width:54px;height:min(54px,80cqh);border-radius:min(27px,40cqh);font-size:min(26px,48cqh)}
+.scoring .stepper .val{width:min(66px,max(54px,88cqh));height:min(66px,88cqh);font-size:min(40px,64cqh);border-radius:min(16px,22cqh)}
+.scoring.s1 .pl-name{font-size:16px}
+.scoring.s2 .hole-no{font-size:44px}.scoring.s2 .hole-head{padding:8px 12px}
+.scoring.s2 .pill,.scoring.s3 .pill{width:34px;height:34px;font-size:15px}
+.scoring.s2 .plist{gap:6px}.scoring.s2 .pl{min-height:40px;padding:3px 10px}
+.scoring.s2 .pl-info,.scoring.s3 .pl-info{display:flex;align-items:baseline;gap:8px;overflow:hidden}
+.scoring.s2 .pl-tot .t0,.scoring.s3 .pl-tot .t0{display:none}
+.scoring.s3 .hole-no{font-size:38px}.scoring.s3 .hole-head{padding:6px 12px}.scoring.s3 .plist{gap:5px}.scoring.s3 .pl{min-height:38px;padding:2px 10px}
+.scoring.s3 .pl-name{font-size:15px}.scoring.s3 .pl-tot{font-size:12px}
+.scoring .navrow{flex:none}
+.scoring .navrow .btn{min-height:50px}
+.scoring .sfoot{flex:none;display:flex;justify-content:space-between;margin-top:-2px}
+.scoring .sfoot .link{font-size:13px;padding:2px 0}
+.scoring .confirm,.scoring .warn{flex:none}
+/* ---- roster (in game) vs suggestions ---- */
+.roster{background:color-mix(in srgb,var(--pine) 10%,var(--surface));border:1.5px solid color-mix(in srgb,var(--pine) 45%,transparent);border-radius:16px;padding:10px 10px 10px 12px;display:flex;flex-direction:column;gap:8px}
+.roster-h{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pine)}
+.roster-h b{background:var(--pine);color:var(--pine-ink);border-radius:999px;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;letter-spacing:0}
+.rchips{display:flex;flex-wrap:wrap;gap:8px}
+.rchip{display:inline-flex;align-items:center;gap:7px;background:var(--pine);color:var(--pine-ink);border-radius:999px;padding:4px 10px 4px 4px;font-size:15px;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.rchip.me{background:var(--hero);color:var(--hero-ink)}
+.rchip .av{font-style:normal;width:26px;height:26px;border-radius:50%;background:color-mix(in srgb,#fff 25%,transparent);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.rchip .who{font-size:11px;font-weight:600;opacity:.8;border:1px solid currentColor;border-radius:999px;padding:0 6px}
+.rchip .x{border:0;background:color-mix(in srgb,#fff 22%,transparent);color:inherit;width:22px;height:22px;border-radius:50%;padding:0;font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+.rchip.pop{animation:pop .35s ease-out}
+@keyframes pop{0%{transform:scale(.6);opacity:.3}70%{transform:scale(1.08)}100%{transform:scale(1)}}
+.sugg{display:flex;flex-direction:column;gap:6px}
+.sugg-l{font-size:12px;color:var(--muted)}
+.sugg .chip.add{border:1.5px dashed color-mix(in srgb,var(--muted) 60%,transparent);color:var(--muted);background:transparent;font-weight:500;padding:5px 11px}
+.sugg .chip.add .plus{font-weight:700;color:var(--pine);font-size:16px;line-height:1}
+.sugg .chip.add.acc::before{display:none}
+.newgame-head h1{font-size:24px;margin:0}
+.ng{gap:8px}
+.f.inl{flex-direction:row;align-items:center;justify-content:space-between;gap:12px}
+.f.inl select{width:auto;flex:0 1 60%;padding-block:8px}
+.radd{border:1.5px dashed var(--pine);background:var(--surface);color:var(--pine);border-radius:999px;padding:5px 12px;font-size:14px;font-weight:700}
+.radd span{font-weight:500;color:var(--muted);font-size:12px}
 .tog{display:flex;gap:12px;align-items:flex-start;padding:6px 0}
 .tog input{width:22px;height:22px;margin-top:2px;accent-color:var(--pine);flex:0 0 auto}
 .sheet-bg{position:fixed;inset:0;background:rgba(5,20,12,.45);z-index:15}
@@ -587,6 +646,8 @@ function render(){
   v.innerHTML=f();
   if(focusId){const el=document.getElementById(focusId);if(el&&el.tagName==="INPUT"&&el.type==="text"){el.focus();const n=el.value.length;try{el.setSelectionRange(n,n);}catch(e){}}}
   if(S.ui.lb&&S.current&&S.tab==="play"&&!S.ui.finished)v.insertAdjacentHTML("beforeend",lbSheet(S.current));else S.ui.lb=false;
+  fitView();
+  if(S.ui.justAdded)setTimeout(()=>{S.ui.justAdded=null;},400);
   if(v.querySelector(".zchart"))drawCharts();
   deviceSync();
   const cur=v.querySelector(".pill.cur");if(cur)cur.scrollIntoView({block:"nearest",inline:"center"});
@@ -612,19 +673,22 @@ function vPlay(){
   const csel=S.courses.find(c=>c.id===sel);
   const signCard=window.Cloud&&S.mode==="local"?'<div class="card spread"><span class="small">Pieraksties, lai kopīgās spēles redzētu arī draugi.</span><button class="btn primary" data-act="authOpen">Pierakstīties</button></div>':'';
   const open=!!S.ui.pickOpen;
-  return signCard+'<div class="newgame-head"><div class="eyebrow">Jauna spēle</div><h1>Kur šodien met?</h1></div>'+
-  '<section class="stack"><h2>Laukums</h2><div class="combo'+(open?' open':'')+'">'+
+  return signCard+'<div class="newgame-head"><h1>Jauna spēle</h1></div>'+
+  '<section class="stack ng"><div class="eyebrow">Laukums</div><div class="combo'+(open?' open':'')+'">'+
   '<button class="combo-btn" data-act="togglePick" aria-expanded="'+open+'"><span><span class="t">'+(csel?esc(csel.name):'Izvēlies laukumu')+'</span>'+(csel?'<br><span class="muted small">'+csel.holes.length+' grozi · par '+sum(csel.holes.map(h=>h.par))+(csel.location?' · '+esc(csel.location):'')+'</span>':'')+'</span><span class="chev" aria-hidden="true"></span></button>'+
   (open?'<div class="combo-panel"><input type="search" id="courseQ" placeholder="Meklēt laukumu…" autocomplete="off" value="'+esc(S.ui.courseQ||"")+'"><div class="pick" id="courseList">'+courseListHTML(sel)+'</div></div>':'')+
   '</div>'+startSel(sel)+'</section>'+
-  '<section class="stack"><h2>Spēlētāji</h2><div class="chips">'+pls.map((p,i)=>'<span class="chip'+(p.isMe?' me':'')+(p.uid&&!p.isMe?' acc':'')+'">'+esc(p.name)+(p.isMe?'':' <button class="x" data-act="rmPlayer" data-v="'+i+'" aria-label="Noņemt '+esc(p.name)+'">×</button>')+'</span>').join("")+'</div>'+
-  (accF.length?'<div class="chips">'+accF.map(f=>'<button class="chip add acc" data-act="addAcc" data-v="'+f.uid+'">+ '+esc(f.name)+'</button>').join("")+'</div><p class="small muted" style="margin:0">Draugi ar kontu redzēs spēli un varēs ievadīt rezultātus savā telefonā.</p>':'')+
-  (friends.length?'<div class="chips">'+friends.map(n=>'<button class="chip add lp" data-act="addFriend" data-v="'+esc(n)+'">+ '+esc(n)+'</button>').join("")+'</div><p class="small muted" style="margin:0">Turi nospiestu vārdu, lai to noņemtu no ieteikumiem.</p>':'')+
+  '<section class="stack ng">'+roster(pls,true)+
+  ((accF.length||friends.length)?'<div class="sugg"><div class="sugg-l">Ieteikumi · pieskaries, lai pievienotu'+(friends.length?' · turi, lai paslēptu':'')+'</div><div class="chips">'+
+    accF.map(f=>'<button class="chip add acc" data-act="addAcc" data-v="'+f.uid+'"><span class="plus">+</span>'+esc(f.name)+'</button>').join("")+
+    friends.map(n=>'<button class="chip add lp" data-act="addFriend" data-v="'+esc(n)+'"><span class="plus">+</span>'+esc(n)+'</button>').join("")+'</div></div>':'')+
   (S.ui.hideAsk?'<div class="confirm"><span>Noņemt “'+esc(S.ui.hideAsk)+'” no ieteiktajiem spēlētājiem? Vecie rezultāti paliks.</span><button class="btn danger" data-act="hideYes">Noņemt</button><button class="btn ghost" data-act="hideNo">Atcelt</button></div>':'')+
-  '<button class="btn ghost wide" data-act="addOpen">+ Pievienot spēlētāju (vārds vai ID)</button>'+
   (S.mode==="fb"&&S.profile.pid?'<p class="small muted" style="margin:0">Tavs spēlētāja ID: <b class="num" style="font-size:17px;color:var(--ink)">#'+esc(S.profile.pid)+'</b> — pasaki to draugiem, lai viņi tevi pievienotu.</p>':'')+'</section>'+
   (S.ui.addOpen?addSheet():'')+
   '<div class="actionbar"><button class="btn primary wide" data-act="start" style="min-height:54px;font-size:17px">Sākt spēli</button></div>';
+}
+function roster(pls,addBtn){
+  return '<div class="roster" aria-label="Spēlē '+pls.length+'"><div class="roster-h"><span>Spēlē</span><b>'+pls.length+'</b></div><div class="rchips">'+pls.map((p,i)=>'<span class="rchip'+(p.isMe?' me':'')+(S.ui.justAdded&&S.ui.justAdded===p.name?' pop':'')+'"><i class="av">'+esc((p.name||"?").trim().charAt(0).toUpperCase())+'</i><span class="nm">'+esc(p.name)+'</span>'+(p.isMe?'<span class="who">tu</span>':p.uid?'<span class="who">konts</span>':'')+(p.isMe?'':'<button class="x" data-act="rmPlayer" data-v="'+i+'" aria-label="Noņemt '+esc(p.name)+'">×</button>')+'</span>').join("")+(addBtn?'<button class="radd" data-act="addOpen">+ Pievienot <span>vārds vai ID</span></button>':'')+'</div></div>';
 }
 /* ---- add-player sheet (sits at the top so the keyboard never covers it) ---- */
 function addSheet(){
@@ -635,7 +699,7 @@ function addSheet(){
 function addResHTML(){
   const q=(S.ui.addQ||"").trim(),fq=fold(q),pls=S.ui.newPlayers||[];
   const inGame=n=>pls.some(p=>p.name.toLowerCase()===n.toLowerCase());
-  let h='<div class="eyebrow">Spēlē ('+pls.length+')</div><div class="chips">'+pls.map((p,i)=>'<span class="chip'+(p.isMe?' me':'')+(p.uid&&!p.isMe?' acc':'')+'">'+esc(p.name)+(p.isMe?'':' <button class="x" data-act="rmPlayer" data-v="'+i+'" aria-label="Noņemt '+esc(p.name)+'">×</button>')+'</span>').join("")+'</div>';
+  let h=roster(pls);
   const accounts=(S.ui.addRes||[]).filter(u=>u.uid!==S.uid&&!pls.some(p=>p.uid===u.uid));
   if(S.mode==="fb"&&q){
     h+='<div class="eyebrow">Spēlētāji ar kontu</div>';
@@ -644,8 +708,8 @@ function addResHTML(){
   }
   const fr=(S.friends||[]).filter(f=>!pls.some(p=>p.uid===f.uid)&&(!fq||fold(f.name).includes(fq)||(f.pid||"").startsWith(q)));
   const guests=friendNames().filter(n=>!inGame(n)&&!(S.friends||[]).some(f=>f.name.toLowerCase()===n.toLowerCase())&&(!fq||fold(n).includes(fq))).slice(0,12);
-  if(fr.length)h+='<div class="eyebrow">Draugi</div><div class="chips">'+fr.map(f=>'<button class="chip add acc" data-act="addAcc" data-v="'+f.uid+'">+ '+esc(f.name)+(f.pid?' #'+esc(f.pid):'')+'</button>').join("")+'</div>';
-  if(guests.length)h+='<div class="eyebrow">Iepriekšējie spēlētāji</div><div class="chips">'+guests.map(n=>'<button class="chip add" data-act="addFriend" data-v="'+esc(n)+'">+ '+esc(n)+'</button>').join("")+'</div>';
+  if(fr.length)h+='<div class="sugg"><div class="sugg-l">Draugi · pieskaries, lai pievienotu</div><div class="chips">'+fr.map(f=>'<button class="chip add acc" data-act="addAcc" data-v="'+f.uid+'"><span class="plus">+</span>'+esc(f.name)+(f.pid?' <span class="muted">#'+esc(f.pid)+'</span>':'')+'</button>').join("")+'</div></div>';
+  if(guests.length)h+='<div class="sugg"><div class="sugg-l">Iepriekšējie spēlētāji · pieskaries, lai pievienotu</div><div class="chips">'+guests.map(n=>'<button class="chip add" data-act="addFriend" data-v="'+esc(n)+'"><span class="plus">+</span>'+esc(n)+'</button>').join("")+'</div></div>';
   if(q&&!/^\d+$/.test(q)&&!inGame(q))h+='<button class="btn ghost wide" data-act="addGuest">+ Pievienot “'+esc(q)+'” kā viesi (bez konta)</button>';
   if(window.Cloud&&S.mode!=="fb")h+='<p class="small muted" style="margin:0">Pieraksties, lai pievienotu draugus pēc ID un spēlētu kopā.</p>';
   return h;
@@ -664,7 +728,7 @@ function afterAdd(){S.ui.addQ="";S.ui.addRes=[];render();const i=$("#addQ");if(i
 function startSel(id){
   const c=S.courses.find(x=>x.id===id);if(!c)return"";
   const k=S.ui.sel.start||0;
-  return '<label class="f" for="startHole">Sākt no groza<select id="startHole" data-change="startHole">'+c.holes.map((h,i)=>'<option value="'+i+'"'+(i===k?' selected':'')+'>'+(i+1)+'. grozs'+(i===0?' (parastais sākums)':'')+' · par '+h.par+'</option>').join("")+'</select></label>';
+  return '<label class="f inl" for="startHole"><span>Sākt no groza</span><select id="startHole" data-change="startHole">'+c.holes.map((h,i)=>'<option value="'+i+'"'+(i===k?' selected':'')+'>'+(i+1)+'. grozs · par '+h.par+'</option>').join("")+'</select></label>';
 }
 function lastCourseId(){const r=doneRounds().slice(-1)[0];if(r&&S.courses.some(c=>c.id===r.courseId))return r.courseId;return S.courses[0]&&S.courses[0].id;}
 const playsOf=id=>S.rounds.filter(r=>r.courseId===id).length;
@@ -676,29 +740,42 @@ function bestOn(id){const rs=S.rounds.filter(r=>r.courseId===id&&isFull(r));if(!
 function vScoring(){
   const c=S.current,h=c.hole,par=c.pars[h],dist=c.dists&&c.dists[h];
   const me=c.players.find(p=>p.isMe)||c.players[0];
-  const played=c.pars.length;
+  const played=c.pars.length,n=c.players.length;
   const strip=c.pars.map((p,i)=>'<button class="pill '+cls(me.scores[i],p)+(i===h?' cur':'')+'" data-act="goHole" data-v="'+i+'" aria-label="Grozs '+NO(c,i)+'">'+NO(c,i)+'</button>').join("");
   const ed=!!c.editOf;
   const rows=c.players.map((p,pi)=>{
     const s=p.scores[h];const thru=p.scores.filter(x=>x!=null).length;
     const d=sum(p.scores.map((x,i)=>x==null?0:x-c.pars[i]));
     const vt=devOK()&&prefs.vol&&volTarget()===pi;
-    return '<div class="card pl'+(vt?' voltarget':'')+'"><div'+(devOK()&&prefs.vol?' class="volsel" data-act="volSel" data-v="'+pi+'"':'')+'>'+(vt?'<div class="volbadge">▲▼ skaļuma pogas</div>':'')+'<div class="pl-name">'+esc(p.name)+'</div><div class="pl-tot">'+(thru?'<b class="num" style="font-size:18px;color:var(--ink)">'+rel(d)+'</b> pēc '+thru+' groz'+(thru===1?'a':'iem'):'vēl nav metienu')+'</div></div>'+
+    return '<div class="card pl'+(vt?' voltarget':'')+'"><div class="pl-info'+(devOK()&&prefs.vol?' volsel" data-act="volSel" data-v="'+pi+'"':'"')+'><div class="pl-name">'+esc(p.name)+(vt?' <span class="volbadge">▲▼</span>':'')+'</div><div class="pl-tot">'+(thru?'<b class="num">'+rel(d)+'</b> · '+thru+' gr.':'<span class="t0">vēl nav metienu</span>')+'</div></div>'+
     '<div class="stepper"><button data-act="dec" data-v="'+pi+'" aria-label="Mazāk metienu">−</button><button class="val '+(s==null?'par':cls(s,par))+'" data-act="setPar" data-v="'+pi+'" aria-label="Metieni: '+(s==null?par+' (par, apstiprinās ar Nākamais grozs)':s)+'">'+(s==null?par:s)+'</button><button data-act="inc" data-v="'+pi+'" aria-label="Vairāk metienu">+</button></div></div>';
   }).join("");
   const last=h===played-1;
   const miss=S.ui.missing;
-  return '<div class="spread"><div class="eyebrow">'+(ed?'Labo raundu · ':'')+esc(c.courseName)+(c.live&&(c.memberUids||[]).length>1?' <span class="livechip">● Kopīga spēle</span>':'')+'</div><button class="lbbtn" data-act="lbOpen" aria-label="Atvērt tabulu">Tabula <span>'+(h+1)+'/'+played+'</span></button></div>'+
-  '<div class="'+(c.players.length>=6?'lots-head':'')+'"><div class="hole-head'+(c.players.length>=4?' compact':'')+'"><div class="hole-no">'+NO(c,h)+'</div><div class="hole-meta"><span class="eyebrow">Grozs</span><span>Par <b>'+par+'</b>'+(dist?' · <b>'+dist+'</b> m':'')+'</span></div></div>'+
-  '<div class="strip" role="list">'+strip+'</div></div>'+
-  '<div class="stack plist'+(c.players.length>=4?' many':'')+(c.players.length>=6?' lots':'')+'">'+rows+'</div>'+
-  (miss?'<div class="warn">Nav ievadīti metieni: '+esc(miss)+'. Aizpildi tos, tad varēsi pabeigt.</div>':'')+
-  '<div class="actionbar"><div class="navrow"><button class="btn ghost" data-act="prevHole"'+(h===0?' disabled':'')+'>← Atpakaļ</button>'+
-  (last?'<button class="btn accent" data-act="finish">'+(ed?'Saglabāt izmaiņas':'Pabeigt spēli')+'</button>':'<button class="btn primary" data-act="nextHole">Nākamais grozs →</button>')+'</div></div>'+
-  (ed?(S.ui.confirmAbort?'<div class="confirm"><span>Atmest izmaiņas? Saglabātais raunds paliks nemainīts.</span><button class="btn danger" data-act="abortYes">Atmest</button><button class="btn ghost" data-act="abortNo">Turpināt labot</button></div>':'<div class="row" style="justify-content:space-between"><button class="link" data-act="finish">Saglabāt izmaiņas tagad</button><button class="link" data-act="abort">Atcelt labošanu</button></div>'):
+  const sz=n>=7?' s3':n>=5?' s2':n>=3?' s1':'';
+  const foot=ed?(S.ui.confirmAbort?'<div class="confirm"><span>Atmest izmaiņas? Saglabātais raunds paliks nemainīts.</span><button class="btn danger" data-act="abortYes">Atmest</button><button class="btn ghost" data-act="abortNo">Turpināt labot</button></div>':'<div class="sfoot"><button class="link" data-act="finish">Saglabāt izmaiņas tagad</button><button class="link" data-act="abort">Atcelt labošanu</button></div>'):
   S.ui.confirmAbort?'<div class="confirm"><span>'+(c.live&&c.ownerUid!==S.uid?'Iziet no šīs spēles? Pārējie turpinās bez tevis.':c.live&&(c.memberUids||[]).length>1?'Dzēst šo spēli visiem spēlētājiem?':'Dzēst šo spēli bez saglabāšanas?')+'</span><button class="btn danger" data-act="abortYes">'+(c.live&&c.ownerUid!==S.uid?'Iziet':'Dzēst')+'</button><button class="btn ghost" data-act="abortNo">Atcelt</button></div>':
-  '<div class="row" style="justify-content:space-between"><button class="link" data-act="finishEarly">Pabeigt tagad</button><button class="link" data-act="abort">'+(c.live&&c.ownerUid!==S.uid?'Iziet no spēles':'Pārtraukt spēli')+'</button></div>');
+  '<div class="sfoot"><button class="link" data-act="finishEarly">Pabeigt tagad</button><button class="link" data-act="abort">'+(c.live&&c.ownerUid!==S.uid?'Iziet no spēles':'Pārtraukt spēli')+'</button></div>';
+  return '<div class="scoring'+sz+'">'+
+  '<div class="hole-head"><div class="hole-no">'+NO(c,h)+'</div><div class="hole-meta"><span class="eyebrow">'+(ed?'Labo · ':'')+esc(c.courseName)+'</span><span>Par <b>'+par+'</b>'+(dist?' · <b>'+dist+'</b> m':'')+(c.live&&(c.memberUids||[]).length>1?' <span class="livechip">● kopīga</span>':'')+'</span></div><button class="lbbtn" data-act="lbOpen" aria-label="Atvērt tabulu">Tabula <span>'+(h+1)+'/'+played+'</span></button></div>'+
+  '<div class="strip" role="list">'+strip+'</div>'+
+  '<div class="plist">'+rows+'</div>'+
+  (miss?'<div class="warn">Nav ievadīti metieni: '+esc(miss)+'. Aizpildi tos, tad varēsi pabeigt.</div>':'')+
+  '<div class="navrow"><button class="btn ghost" data-act="prevHole"'+(h===0?' disabled':'')+'>← Atpakaļ</button>'+
+  (last?'<button class="btn accent" data-act="finish">'+(ed?'Saglabāt izmaiņas':'Pabeigt spēli')+'</button>':'<button class="btn primary" data-act="nextHole">Nākamais grozs →</button>')+'</div>'+
+  foot+'</div>';
 }
+/* scoring screen fills exactly the space between header and tab bar */
+function fitView(){
+  const v=$("#view"),sc=v&&v.querySelector(".scoring");
+  if(!sc){if(v){v.classList.remove("fitv");v.style.height="";}return;}
+  v.classList.add("fitv");
+  const top=document.querySelector(".top"),tabs=$("#tabs");
+  const t=top?top.getBoundingClientRect().bottom:0,b=tabs?tabs.getBoundingClientRect().top:innerHeight;
+  v.style.height=Math.max(320,Math.floor(b-t-8))+"px";
+}
+window.addEventListener("resize",()=>fitView());
+if(window.visualViewport)visualViewport.addEventListener("resize",()=>fitView());
 
 function lbSheet(c){
   const rows=c.players.map(p=>{let rel=0,tot=0,thru=0;p.scores.forEach((s,i)=>{if(s!=null){rel+=s-c.pars[i];tot+=s;thru++;}});return{p,rel,tot,thru};})
@@ -786,7 +863,6 @@ function vProg(){
   rs.forEach(r=>meOf(r).scores.forEach((s,i)=>cnt[cls(s,r.pars[i])]++));
   const birdies=cnt.birdie+cnt.eagle;
   const mixed=new Set(rs.map(r=>r.pars.length)).size>1;
-  const cds=mixed?ds.map((d,i)=>Math.round(d/rs[i].pars.length*18*10)/10):ds;
   const opts=[...new Map(all.map(r=>[r.courseId,r.courseName])).entries()];
   const half=Math.floor(ds.length/2);
   let trend="";
@@ -800,8 +876,8 @@ function vProg(){
    tile("Labākais",rel(ds[bi]),esc(best.courseName)+", "+fmtDate(best.date))+
    tile("Birdiji",birdies,(birdies/rs.length).toFixed(1)+" vienā spēlē")+
   '</div>'+
-  '<section class="card stack chart"><div class="spread"><h2>Rezultāts</h2>'+zoomBtns()+'</div>'+(mixed?'<p class="small muted" style="margin:0">Laukumiem ir atšķirīgs grozu skaits, tāpēc rezultāti pārrēķināti uz 18 groziem.</p>':'')+
-  (chartSetData(rs,cds,cid+"|"+per+"|"+rs.length),'<div class="zchart" id="zc" data-h="230"></div>')+
+  '<section class="card stack chart"><div class="spread"><h2>Rezultāts</h2>'+zoomBtns()+'</div>'+
+  (chartSetData(rs,ds,cid+"|"+per+"|"+rs.length),'<div class="zchart" id="zc" data-h="230"></div>')+
   '<div class="legend"><span><i style="background:var(--pine)"></i>Spēle</span><span><i style="background:var(--accent)"></i>Vidējais pēdējām 20</span><span class="muted">augstāk = labāk</span></div>'+
   '<p class="small muted" style="margin:0">Velc ar pirkstu, lai pārbīdītu laiku · savelc vai izpleti ar diviem pirkstiem, lai tuvinātu · pieskaries punktam, lai redzētu spēli · turi nospiestu, lai atvērtu lielāku.</p>'+(trend?'<div class="small">'+trend+'</div>':'')+'</section>'+
   '<section class="card stack"><h2>Metienu sadalījums</h2>'+distBar(cnt)+'</section>'+
@@ -844,11 +920,11 @@ function chartSVG(id,H,Wp){
   const pts=vis.map(P).join(" "),mpts=vis.map(M).join(" ");
   const area=vis.length>1?"M"+x(vis[0])+","+y(hi)+" L"+vis.map(P).join(" L")+" L"+x(vis[vis.length-1])+","+y(hi)+"Z":"";
   const shown=Math.max(1,span+1),r=shown>150?2:shown>70?3:4.5;
-  const dots=vis.map(i=>'<circle cx="'+x(i).toFixed(1)+'" cy="'+y(ds[i]).toFixed(1)+'" r="'+(i===CH.sel?7:r)+'" fill="var(--'+relCls(Math.round(ds[i]))+')" stroke="var(--surface)" stroke-width="'+(r>3?2:1)+'"/>').join("");
+  const dots=vis.map(i=>'<circle cx="'+x(i).toFixed(1)+'" cy="'+y(ds[i]).toFixed(1)+'" r="'+(i===CH.sel?7:r)+'" fill="var(--'+relCls(ds[i])+')" stroke="var(--surface)" stroke-width="'+(r>3?2:1)+'"/>').join("");
   const ticks=n===1?[0]:[x0,(x0+x1)/2,x1].map(Math.round).filter((v,i,arr)=>arr.indexOf(v)===i);
   const xl=ticks.map((i,k)=>'<text x="'+x(i).toFixed(1)+'" y="'+(H-8)+'" text-anchor="'+(ticks.length===1?'middle':k===0?'start':k===ticks.length-1?'end':'middle')+'">'+shortDate(rs[i].date)+'</text>').join("");
   let sel="";
-  if(CH.sel!=null&&CH.sel>=a&&CH.sel<=b){const i=CH.sel,sx=x(i),sy=y(ds[i]);const txt=shortDate(rs[i].date)+" · "+relF(ds[i]);const txt2=String(rs[i].courseName).slice(0,34);
+  if(CH.sel!=null&&CH.sel>=a&&CH.sel<=b){const i=CH.sel,sx=x(i),sy=y(ds[i]);const txt=shortDate(rs[i].date)+" · "+rel(ds[i])+" ("+sum(meOf(rs[i]).scores)+")";const txt2=String(rs[i].courseName).slice(0,34);
     const bw=Math.max(txt.length,txt2.length)*7.2+16,bx=Math.min(W-R-bw,Math.max(L,sx-bw/2)),by=sy>T+60?sy-56:sy+14;
     sel='<line x1="'+sx+'" x2="'+sx+'" y1="'+T+'" y2="'+(T+h)+'" stroke="var(--ink)" stroke-width="1" stroke-dasharray="2 3"/><rect x="'+bx+'" y="'+by+'" width="'+bw+'" height="42" rx="8" fill="var(--ink)" opacity=".92"/><text x="'+(bx+8)+'" y="'+(by+17)+'" style="fill:var(--bg);font-weight:700">'+esc(txt)+'</text><text x="'+(bx+8)+'" y="'+(by+34)+'" style="fill:var(--bg)">'+esc(txt2)+'</text>';}
   const info='<text x="'+(W-R)+'" y="'+(T-4)+'" text-anchor="end">'+(Math.round(span)+1)+' no '+n+' spēlēm</text>';
@@ -1138,12 +1214,12 @@ document.addEventListener("click",ev=>{
     case"hideYes":{const n=S.ui.hideAsk;S.profile.hiddenFriends=[...new Set([...(S.profile.hiddenFriends||[]),n.toLowerCase()])];S.ui.hideAsk=null;Store.saveProfile();render();toast("“"+n+"” noņemts no ieteikumiem");break;}
     case"hideNo":S.ui.hideAsk=null;render();break;
     case"rmPlayer":S.ui.newPlayers.splice(+v,1);if(S.ui.addOpen){const el=$("#addRes");if(el)el.innerHTML=addResHTML();}render();if(S.ui.addOpen){const i=$("#addQ");if(i)i.focus();}break;
-    case"addAcc":{const f=S.friends.find(x=>x.uid===v);if(f)S.ui.newPlayers.push({name:f.name,isMe:false,uid:f.uid});if(S.ui.addOpen)afterAdd();else render();break;}
+    case"addAcc":{const f=S.friends.find(x=>x.uid===v);if(f){S.ui.justAdded=f.name;S.ui.newPlayers.push({name:f.name,isMe:false,uid:f.uid});}if(S.ui.addOpen)afterAdd();else render();break;}
     case"addOpen":S.ui.addOpen=true;S.ui.addQ="";S.ui.addRes=[];render();{const i=$("#addQ");if(i)i.focus();}break;
     case"addClose":S.ui.addOpen=false;render();break;
     case"addGuest":{const n=(S.ui.addQ||"").trim().slice(0,30);if(!n)break;if(S.ui.newPlayers.length>=12){toast("Līdz 12 spēlētājiem vienā spēlē");break;}
-      S.ui.newPlayers.push({name:n,isMe:false});if((S.profile.hiddenFriends||[]).includes(n.toLowerCase())){S.profile.hiddenFriends=S.profile.hiddenFriends.filter(h=>h!==n.toLowerCase());Store.saveProfile();}afterAdd();break;}
-    case"addUser":{const u=(S.ui.addRes||[]).find(x=>x.uid===v);if(!u)break;S.ui.newPlayers.push({name:u.name,isMe:false,uid:u.uid});
+      S.ui.justAdded=n;S.ui.newPlayers.push({name:n,isMe:false});if((S.profile.hiddenFriends||[]).includes(n.toLowerCase())){S.profile.hiddenFriends=S.profile.hiddenFriends.filter(h=>h!==n.toLowerCase());Store.saveProfile();}afterAdd();break;}
+    case"addUser":{const u=(S.ui.addRes||[]).find(x=>x.uid===v);if(!u)break;S.ui.justAdded=u.name;S.ui.newPlayers.push({name:u.name,isMe:false,uid:u.uid});
       if(!(S.profile.friends||[]).includes(u.uid)){S.profile.friends=[...(S.profile.friends||[]),u.uid];if(!S.friends.some(f=>f.uid===u.uid))S.friends.push({uid:u.uid,name:u.name,pid:u.pid});Store.saveProfile();}
       toast(u.name+" pievienots spēlei un draugiem");afterAdd();break;}
     case"authOpen":S.ui.auth="login";S.ui.authErr=null;S.ui.page="account";render();window.scrollTo(0,0);break;
@@ -1156,7 +1232,7 @@ document.addEventListener("click",ev=>{
       Cloud.reset(em).then(()=>toast("Paroles maiņas saite nosūtīta uz "+em)).catch(e=>{S.ui.authErr=authMsg(e);render();});break;}
     case"signOut":Cloud.signOut();break;
     case"rmAcc":S.profile.friends=(S.profile.friends||[]).filter(u=>u!==v);Store.saveProfile();render();break;
-    case"addFriend":if(lpFired){lpFired=false;break;}S.ui.newPlayers.push({name:v,isMe:false});if(S.ui.addOpen)afterAdd();else render();break;
+    case"addFriend":if(lpFired){lpFired=false;break;}S.ui.justAdded=v;S.ui.newPlayers.push({name:v,isMe:false});if(S.ui.addOpen)afterAdd();else render();break;
     case"start":startGame();break;
     case"newGame":S.ui.finished=null;render();break;
     case"goHole":c.hole=+v;S.ui.missing=null;Store.saveCurrent();render();break;
@@ -1247,7 +1323,7 @@ document.addEventListener("submit",ev=>{
   if(f.dataset.form==="addPlayer"){const i=$("#newPlayer"),n=i.value.trim();if(!n)return;
     if(S.ui.newPlayers.some(p=>p.name.toLowerCase()===n.toLowerCase())){toast("Šāds spēlētājs jau ir");return;}
     if(S.ui.newPlayers.length>=8){toast("Līdz 8 spēlētājiem vienā spēlē");return;}
-    S.ui.newPlayers.push({name:n,isMe:false});i.value="";
+    S.ui.justAdded=n;S.ui.newPlayers.push({name:n,isMe:false});i.value="";
     if((S.profile.hiddenFriends||[]).includes(n.toLowerCase())){S.profile.hiddenFriends=S.profile.hiddenFriends.filter(h=>h!==n.toLowerCase());Store.saveProfile();}
     render();}
   if(f.dataset.form==="myName"){const n=$("#myName").value.trim()||"Es";S.profile.myName=n;if(S.ui.newPlayers){const m=S.ui.newPlayers.find(p=>p.isMe);if(m)m.name=n;}Store.saveProfile();toast("Vārds saglabāts");render();}
