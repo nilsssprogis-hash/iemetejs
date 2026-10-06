@@ -316,6 +316,7 @@ main.fitv{padding-block:10px 0;overflow:hidden;gap:0}
 .ng{gap:8px}
 .f.inl{flex-direction:row;align-items:center;justify-content:space-between;gap:12px}
 .f.inl select{width:auto;flex:0 1 60%;padding-block:8px}
+.rnone{font-size:14px;color:var(--muted);align-self:center;padding:4px 2px}
 .radd{border:1.5px dashed var(--pine);background:var(--surface);color:var(--pine);border-radius:999px;padding:5px 12px;font-size:14px;font-weight:700}
 .radd span{font-weight:500;color:var(--muted);font-size:12px}
 .tog{display:flex;gap:12px;align-items:flex-start;padding:6px 0}
@@ -688,7 +689,11 @@ function vPlay(){
   '<div class="actionbar"><button class="btn primary wide" data-act="start" style="min-height:54px;font-size:17px">Sākt spēli</button></div>';
 }
 function roster(pls,addBtn){
-  return '<div class="roster" aria-label="Spēlē '+pls.length+'"><div class="roster-h"><span>Spēlē</span><b>'+pls.length+'</b></div><div class="rchips">'+pls.map((p,i)=>'<span class="rchip'+(p.isMe?' me':'')+(S.ui.justAdded&&S.ui.justAdded===p.name?' pop':'')+'"><i class="av">'+esc((p.name||"?").trim().charAt(0).toUpperCase())+'</i><span class="nm">'+esc(p.name)+'</span>'+(p.isMe?'<span class="who">tu</span>':p.uid?'<span class="who">konts</span>':'')+(p.isMe?'':'<button class="x" data-act="rmPlayer" data-v="'+i+'" aria-label="Noņemt '+esc(p.name)+'">×</button>')+'</span>').join("")+(addBtn?'<button class="radd" data-act="addOpen">+ Pievienot <span>vārds vai ID</span></button>':'')+'</div></div>';
+  const oth=pls.map((p,i)=>({p,i})).filter(x=>!x.p.isMe);
+  return '<div class="roster" aria-label="Pievienotie spēlētāji: '+oth.length+'"><div class="roster-h"><span>Spēlē kopā ar tevi</span>'+(oth.length?'<b>'+oth.length+'</b>':'')+'</div><div class="rchips">'+
+  (oth.length?'':'<span class="rnone">Pagaidām spēlē tikai tu</span>')+
+  oth.map(({p,i})=>'<span class="rchip'+(S.ui.justAdded&&S.ui.justAdded===p.name?' pop':'')+'"><i class="av">'+esc((p.name||"?").trim().charAt(0).toUpperCase())+'</i><span class="nm">'+esc(p.name)+'</span>'+(p.uid?'<span class="who">konts</span>':'')+'<button class="x" data-act="rmPlayer" data-v="'+i+'" aria-label="Noņemt '+esc(p.name)+'">×</button></span>').join("")+
+  (addBtn?'<button class="radd" data-act="addOpen">+ Pievienot <span>vārds vai ID</span></button>':'')+'</div></div>';
 }
 /* ---- add-player sheet (sits at the top so the keyboard never covers it) ---- */
 function addSheet(){
