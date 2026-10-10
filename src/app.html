@@ -272,7 +272,9 @@ main.fitv{padding-block:10px 0;overflow:hidden;gap:0}
 .scoring .livechip{font-size:11px}
 .scoring .strip{flex:none;padding:0 2px 2px}
 .scoring .plist{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
-.scoring .pl{flex:1 1 0;min-height:52px;max-height:112px;padding:6px 12px;gap:8px;container-type:size}
+.scoring .plrow{flex:1 1 0;min-height:52px;max-height:112px;display:flex;align-items:stretch;gap:6px}
+.scoring .plrow>.ord{align-self:center;margin:0;flex:none}
+.scoring .pl{flex:1 1 auto;min-width:0;padding:6px 12px;gap:8px;container-type:size}
 .scoring .pl-info{min-width:0}
 .scoring.s2 .pl-name,.scoring.s3 .pl-name{flex:0 1 auto;min-width:0}.scoring.s2 .pl-tot,.scoring.s3 .pl-tot{flex:none}
 .scoring .pl-name{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -282,13 +284,13 @@ main.fitv{padding-block:10px 0;overflow:hidden;gap:0}
 .scoring .stepper{gap:8px}
 .scoring .stepper button{width:54px;height:min(54px,80cqh);border-radius:min(27px,40cqh);font-size:min(26px,48cqh)}
 .scoring .stepper .val{width:min(66px,max(54px,88cqh));height:min(66px,88cqh);font-size:min(40px,64cqh);border-radius:min(16px,22cqh)}
-.scoring.s1 .pl-name{font-size:16px}
+.scoring.s1 .pl-name{font-size:16px}.scoring.s1 .plrow{min-height:46px}
 .scoring.s2 .hole-no{font-size:44px}.scoring.s2 .hole-head{padding:8px 12px}
 .scoring.s2 .pill,.scoring.s3 .pill{width:34px;height:34px;font-size:15px}
-.scoring.s2 .plist{gap:6px}.scoring.s2 .pl{min-height:40px;padding:3px 10px}
+.scoring.s2 .plist{gap:6px}.scoring.s2 .plrow{min-height:40px}.scoring.s2 .pl{padding:3px 10px}
 .scoring.s2 .pl-info,.scoring.s3 .pl-info{display:flex;align-items:baseline;gap:8px;overflow:hidden}
 .scoring.s2 .pl-tot .t0,.scoring.s3 .pl-tot .t0{display:none}
-.scoring.s3 .hole-no{font-size:38px}.scoring.s3 .hole-head{padding:6px 12px}.scoring.s3 .plist{gap:5px}.scoring.s3 .pl{min-height:38px;padding:2px 10px}
+.scoring.s3 .hole-no{font-size:38px}.scoring.s3 .hole-head{padding:6px 12px}.scoring.s3 .plist{gap:5px}.scoring.s3 .plrow{min-height:38px}.scoring.s3 .pl{padding:2px 10px}
 .scoring.s3 .pl-name{font-size:15px}.scoring.s3 .pl-tot{font-size:12px}
 .scoring .navrow{flex:none}
 .scoring .navrow .btn{min-height:50px}
@@ -663,7 +665,7 @@ function render(){
   v.innerHTML=f();
   if(focusId){const el=document.getElementById(focusId);if(el&&el.tagName==="INPUT"&&el.type==="text"){el.focus();const n=el.value.length;try{el.setSelectionRange(n,n);}catch(e){}}}
   if(S.ui.lb&&S.current&&S.tab==="play"&&!S.ui.finished)v.insertAdjacentHTML("beforeend",lbSheet(S.current));else S.ui.lb=false;
-  if(S.ui.hs&&S.current&&S.tab==="play"&&!S.ui.finished)v.insertAdjacentHTML("beforeend",hsSheet(S.current));else S.ui.hs=false;
+  if(S.ui.hs&&S.current&&S.tab==="play"&&!S.ui.finished&&holeStats(S.current,S.current.hole).me)v.insertAdjacentHTML("beforeend",hsSheet(S.current));else S.ui.hs=false;
   fitView();
   if(S.ui.justAdded)setTimeout(()=>{S.ui.justAdded=null;},400);
   if(v.querySelector(".zchart"))drawCharts();
@@ -783,8 +785,8 @@ function holeStats(c,h){
 }
 function hsBar(c,h){
   const st=holeStats(c,h);
-  if(!st.all)return '<span class="hstat none">Šeit vēl neesi spēlējis</span>';
-  return '<button class="hstat" data-act="hsOpen" aria-label="Groza statistika">'+(st.me?'Tu <b>'+st.me.avg.toFixed(1)+'</b> · lab. <b>'+st.me.best+'</b> · ':'')+'visi <b>'+st.all.avg.toFixed(1)+'</b><span class="hs-more" aria-hidden="true">›</span></button>';
+  if(!st.me)return '<span class="hstat none">Šeit vēl neesi spēlējis</span>';
+  return '<button class="hstat" data-act="hsOpen" aria-label="Groza statistika">Vidēji <b>'+st.me.avg.toFixed(1)+'</b> · labākais <b>'+st.me.best+'</b><span class="hs-more" aria-hidden="true">›</span></button>';
 }
 function hsDist(o){const t=o.n;return '<div class="hbar">'+DIST.map(([k,l])=>o.cnt[k]?'<span class="'+k+'" style="width:'+(o.cnt[k]/t*100)+'%">'+(o.cnt[k]/t>=0.12?Math.round(o.cnt[k]/t*100)+'%':'')+'</span>':'').join("")+'</div>';}
 function hsSheet(c){
@@ -795,7 +797,6 @@ function hsSheet(c){
   '<div class="sheet-body">'+
   block("Tavi rezultāti",st.me,"")+
   (st.last.length?'<div class="hs-last"><span class="small muted">Pēdējās reizes</span><div class="hs-pills">'+st.last.map(e=>'<span class="pill '+cls(e.s,e.par)+'" title="'+fmtDate(e.d)+'">'+e.s+'</span>').join("")+'</div></div>':'')+
-  block("Visi spēlētāji",st.all,"")+
   '<div class="legend">'+DIST.map(([k,l])=>'<span><i class="lg-'+k+'"></i>'+l+'</span>').join("")+'</div>'+
   '</div></div>';
 }
@@ -810,8 +811,8 @@ function vScoring(){
     const s=p.scores[h];const thru=p.scores.filter(x=>x!=null).length;
     const d=sum(p.scores.map((x,i)=>x==null?0:x-c.pars[i]));
     const vt=devOK()&&prefs.vol&&volTarget()===pi;
-    return '<div class="card pl'+(vt?' voltarget':'')+'"><div class="pl-info'+(devOK()&&prefs.vol?' volsel" data-act="volSel" data-v="'+pi+'"':'"')+'><div class="pl-name">'+(n>1?'<span class="ord'+(pos[pi]===0?' first':'')+'" aria-label="Met '+(pos[pi]+1)+'.">'+(pos[pi]+1)+'</span>':'')+esc(p.name)+(vt?' <span class="volbadge">▲▼</span>':'')+'</div><div class="pl-tot">'+(thru?'<b class="num">'+rel(d)+'</b> · '+thru+' gr.':'<span class="t0">vēl nav metienu</span>')+'</div></div>'+
-    '<div class="stepper"><button data-act="dec" data-v="'+pi+'" aria-label="Mazāk metienu">−</button><button class="val '+(s==null?'par':cls(s,par))+'" data-act="setPar" data-v="'+pi+'" aria-label="Metieni: '+(s==null?par+' (par, apstiprinās ar Nākamais grozs)':s)+'">'+(s==null?par:s)+'</button><button data-act="inc" data-v="'+pi+'" aria-label="Vairāk metienu">+</button></div></div>';
+    return '<div class="plrow">'+(n>1?'<span class="ord'+(pos[pi]===0?' first':'')+'" aria-label="Met '+(pos[pi]+1)+'.">'+(pos[pi]+1)+'</span>':'')+'<div class="card pl'+(vt?' voltarget':'')+'"><div class="pl-info'+(devOK()&&prefs.vol?' volsel" data-act="volSel" data-v="'+pi+'"':'"')+'><div class="pl-name">'+esc(p.name)+(vt?' <span class="volbadge">▲▼</span>':'')+'</div><div class="pl-tot">'+(thru?'<b class="num">'+rel(d)+'</b> · '+thru+' gr.':'<span class="t0">vēl nav metienu</span>')+'</div></div>'+
+    '<div class="stepper"><button data-act="dec" data-v="'+pi+'" aria-label="Mazāk metienu">−</button><button class="val '+(s==null?'par':cls(s,par))+'" data-act="setPar" data-v="'+pi+'" aria-label="Metieni: '+(s==null?par+' (par, apstiprinās ar Nākamais grozs)':s)+'">'+(s==null?par:s)+'</button><button data-act="inc" data-v="'+pi+'" aria-label="Vairāk metienu">+</button></div></div></div>';
   }).join("");
   const last=h===played-1;
   const miss=S.ui.missing;
