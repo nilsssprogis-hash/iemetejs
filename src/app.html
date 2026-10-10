@@ -319,6 +319,8 @@ main.fitv{padding-block:10px 0;overflow:hidden;gap:0}
 .rnone{font-size:14px;color:var(--muted);align-self:center;padding:4px 2px}
 .radd{border:1.5px dashed var(--pine);background:var(--surface);color:var(--pine);border-radius:999px;padding:5px 12px;font-size:14px;font-weight:700}
 .radd span{font-weight:500;color:var(--muted);font-size:12px}
+.ord{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;border-radius:50%;margin-right:8px;font-size:13px;font-weight:700;background:var(--surface-2);color:var(--muted);border:1px solid var(--line);vertical-align:2px}
+.ord.first{background:var(--accent);color:#1b1300;border-color:transparent}
 .tog{display:flex;gap:12px;align-items:flex-start;padding:6px 0}
 .tog input{width:22px;height:22px;margin-top:2px;accent-color:var(--pine);flex:0 0 auto}
 .sheet-bg{position:fixed;inset:0;background:rgba(5,20,12,.45);z-index:15}
@@ -742,17 +744,26 @@ function isFull(r){const me=r.players.find(p=>p.isMe);if(!me||!r.pars.length||me
   const c=S.courses.find(x=>x.id===r.courseId);return c?r.pars.length>=c.holes.length:!r.holeNos;}
 function bestOn(id){const rs=S.rounds.filter(r=>r.courseId===id&&isFull(r));if(!rs.length)return null;return Math.min(...rs.map(r=>sum(meOf(r).scores)-roundPar(r)));}
 
+/* throwing order: hole 1 = order of entry; then lowest score on the previous hole first, ties keep previous order */
+function teeOrder(c,h){
+  let o=c.players.map((_,i)=>i);
+  for(let k=0;k<h;k++){const sc=i=>{const v=c.players[i].scores[k];return v==null?c.pars[k]:v;};
+    o=o.map((i,pos)=>({i,pos})).sort((a,b)=>sc(a.i)-sc(b.i)||a.pos-b.pos).map(x=>x.i);}
+  return o;
+}
+function dispOrder(c){const t=teeOrder(c,c.hole);return prefs.sortOrder?t:c.players.map((_,i)=>i);}
 function vScoring(){
   const c=S.current,h=c.hole,par=c.pars[h],dist=c.dists&&c.dists[h];
   const me=c.players.find(p=>p.isMe)||c.players[0];
   const played=c.pars.length,n=c.players.length;
   const strip=c.pars.map((p,i)=>'<button class="pill '+cls(me.scores[i],p)+(i===h?' cur':'')+'" data-act="goHole" data-v="'+i+'" aria-label="Grozs '+NO(c,i)+'">'+NO(c,i)+'</button>').join("");
   const ed=!!c.editOf;
-  const rows=c.players.map((p,pi)=>{
+  const tee=teeOrder(c,h),pos=[];tee.forEach((pi,k)=>pos[pi]=k);
+  const rows=dispOrder(c).map(pi=>{const p=c.players[pi];
     const s=p.scores[h];const thru=p.scores.filter(x=>x!=null).length;
     const d=sum(p.scores.map((x,i)=>x==null?0:x-c.pars[i]));
     const vt=devOK()&&prefs.vol&&volTarget()===pi;
-    return '<div class="card pl'+(vt?' voltarget':'')+'"><div class="pl-info'+(devOK()&&prefs.vol?' volsel" data-act="volSel" data-v="'+pi+'"':'"')+'><div class="pl-name">'+esc(p.name)+(vt?' <span class="volbadge">▲▼</span>':'')+'</div><div class="pl-tot">'+(thru?'<b class="num">'+rel(d)+'</b> · '+thru+' gr.':'<span class="t0">vēl nav metienu</span>')+'</div></div>'+
+    return '<div class="card pl'+(vt?' voltarget':'')+'"><div class="pl-info'+(devOK()&&prefs.vol?' volsel" data-act="volSel" data-v="'+pi+'"':'"')+'><div class="pl-name">'+(n>1?'<span class="ord'+(pos[pi]===0?' first':'')+'" aria-label="Met '+(pos[pi]+1)+'.">'+(pos[pi]+1)+'</span>':'')+esc(p.name)+(vt?' <span class="volbadge">▲▼</span>':'')+'</div><div class="pl-tot">'+(thru?'<b class="num">'+rel(d)+'</b> · '+thru+' gr.':'<span class="t0">vēl nav metienu</span>')+'</div></div>'+
     '<div class="stepper"><button data-act="dec" data-v="'+pi+'" aria-label="Mazāk metienu">−</button><button class="val '+(s==null?'par':cls(s,par))+'" data-act="setPar" data-v="'+pi+'" aria-label="Metieni: '+(s==null?par+' (par, apstiprinās ar Nākamais grozs)':s)+'">'+(s==null?par:s)+'</button><button data-act="inc" data-v="'+pi+'" aria-label="Vairāk metienu">+</button></div></div>';
   }).join("");
   const last=h===played-1;
@@ -1019,11 +1030,12 @@ function vSettings(){
   if(S.ui.udisc)return pageHead("Imports")+vUdisc();
   const hasEx=S.courses.some(c=>c.example)||S.rounds.some(r=>r.example);
   return pageHead("Iestatījumi")+
-  (devOK()||(window.PUSH_ENABLED&&S.mode==="fb")?'<section class="card stack"><h2>Spēle un paziņojumi</h2>'+
+  '<section class="card stack"><h2>Spēle un paziņojumi</h2>'+
+    '<label class="tog"><input type="checkbox" id="prefSort" data-pref="sortOrder"'+(prefs.sortOrder?' checked':'')+'><span><b>Kārtot spēlētājus metienu secībā</b><br><span class="small muted">Spēles laikā augšā būs tas, kurš met pirmais (zemākais rezultāts iepriekšējā grozā). Ja izslēgts, rindas paliek savās vietās un secību rāda numurs pie vārda.</span></span></label>'+
     (window.PUSH_ENABLED&&S.mode==="fb"?'<label class="tog"><input type="checkbox" id="prefNotify" data-notify="1"'+(S.profile.notify!==false?' checked':'')+'><span><b>Paziņojumi par pabeigtiem raundiem</b><br><span class="small muted">Kad draugs pabeidz kopīgu raundu, saņemsi paziņojumu ar rezultātiem — arī tad, ja Iemetējs ir aizvērts.</span></span></label>':'')+
     (devOK()?'<label class="tog"><input type="checkbox" id="prefLock" data-pref="lock"'+(prefs.lock?' checked':'')+'><span><b>Rādīt pāri bloķēšanas ekrānam</b><br><span class="small muted">Spēles laikā, ieslēdzot ekrānu, Iemetējs atveras uzreiz, bez PIN koda. Pārējais telefons paliek bloķēts.</span></span></label>'+
     '<label class="tog"><input type="checkbox" id="prefVol" data-pref="vol"'+(prefs.vol?' checked':'')+'><span><b>Skaļuma pogas kā + un −</b><br><span class="small muted">Īss spiediens: augšup = +1, lejup = −1 iezīmētajam spēlētājam. Ilgs spiediens (~0,5 s): lejup = nākamais spēlētājs, pēc pēdējā — nākamais grozs; augšup = iepriekšējais spēlētājs.</span></span></label>':'')+
-  '</section>':'')+
+  '</section>'+
   '<section class="card stack"><h2>Dati</h2>'+
   '<p class="small muted" style="margin:0">'+(S.mode==="fb"?"Dati sinhronizējas tavā kontā — "+(navigator.onLine?"tiešsaistē (zaļš punkts pie konta ikonas).":"pašlaik bez interneta, sinhronizēs, kad būs zona."):S.mode==="cloud"?"Dati glabājas tavā Claude kontā un ir redzami tikai tev — tie ir pieejami no jebkuras ierīces, kurā atver šo lietotni.":window.NativeStore?"Dati glabājas šajā telefonā un darbojas bez interneta. Ik pa laikam eksportē rezerves kopiju, piemēram, uz Google Drive vai e-pastu.":"Dati glabājas tikai šajā pārlūkā. Izmanto eksportu, lai saglabātu rezerves kopiju.")+'</p>'+
   '<div class="row">'+'<label class="btn ghost filebtn">Importēt no UDisc<input type="file" class="fileIn" aria-label="Importēt no UDisc"></label>'+(Store.dl||window.NativeStore?'<button class="btn ghost" data-act="export">Eksportēt datus</button>':'')+'<label class="btn ghost filebtn">Importēt Iemetēja failu<input type="file" class="fileIn" aria-label="Importēt Iemetēja failu"></label>'+'</div>'+
@@ -1145,13 +1157,13 @@ const buzz=p=>{if(navigator.vibrate)try{navigator.vibrate(p);}catch(x){}};
 window.addEventListener("iemetejsVolume",e=>{const dir=e.dir||(e.detail&&e.detail.dir),kind=e.kind||(e.detail&&e.detail.kind)||"short";
   const c=S.current;if(!c||S.tab!=="play"||S.ui.finished)return;
   if(kind==="long"){ /* long press: switch player, points never change */
-    const n=c.players.length;let i=volTarget();
+    const n=c.players.length,d=dispOrder(c);let i=d.indexOf(volTarget());
     if(dir==="down"){ /* down the list: next player, after the last one — next hole */
-      if(i<n-1){S.ui.volP=i+1;buzz(150);}
-      else if(c.hole<c.pars.length-1){confirmHole();S.ui.missing=null;c.hole++;S.ui.volP=0;Store.saveCurrent();buzz([150,90,150,90,150]);toast("Grozs "+NO(c,c.hole));}
+      if(i<n-1){S.ui.volP=d[i+1];buzz(150);}
+      else if(c.hole<c.pars.length-1){confirmHole();S.ui.missing=null;c.hole++;S.ui.volP=dispOrder(c)[0];Store.saveCurrent();buzz([150,90,150,90,150]);toast("Grozs "+NO(c,c.hole));}
       else{buzz([300,100,300]);toast("Pēdējais grozs — pabeidz spēli ekrānā");}
     }else{ /* up the list: previous player, stops at the first one */
-      if(i>0){S.ui.volP=i-1;buzz(150);}else{buzz([60,60,60]);}
+      if(i>0){S.ui.volP=d[i-1];buzz(150);}else{buzz([60,60,60]);}
     }
     render();const vt=document.querySelector(".pl.voltarget");if(vt)vt.scrollIntoView({block:"nearest"});else window.scrollTo({top:0});return;}
   const pi=volTarget();scoreAdj(pi,dir==="up"?"inc":"dec");buzz(dir==="up"?30:[20,60,20]);render();});
