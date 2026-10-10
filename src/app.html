@@ -321,6 +321,20 @@ main.fitv{padding-block:10px 0;overflow:hidden;gap:0}
 .radd span{font-weight:500;color:var(--muted);font-size:12px}
 .ord{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;border-radius:50%;margin-right:8px;font-size:13px;font-weight:700;background:var(--surface-2);color:var(--muted);border:1px solid var(--line);vertical-align:2px}
 .ord.first{background:var(--accent);color:#1b1300;border-color:transparent}
+.scoring .hole-head .hole-no{grid-row:1/3}
+.scoring .hole-head .hstat{grid-column:2/4;justify-self:start}
+.hstat{display:inline-flex;align-items:center;gap:3px;align-self:flex-start;max-width:100%;border:0;margin-top:5px;background:color-mix(in srgb,#fff 16%,transparent);color:color-mix(in srgb,var(--hero-ink) 85%,transparent);border-radius:999px;padding:3px 10px;font-size:12px;white-space:nowrap;overflow:hidden;position:relative;z-index:1}
+.hstat b{color:var(--hero-ink);font-weight:700;font-size:13px}
+.hstat .hs-more{font-size:16px;line-height:1;margin-left:4px;color:var(--accent)}
+.hstat.none{background:transparent;padding-left:0}
+.scoring.s3 .hstat,.scoring.s2 .hstat{margin-top:2px;padding:1px 8px}
+.scoring.s2 .hole-meta .eyebrow,.scoring.s3 .hole-meta .eyebrow{display:none}
+.hs-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hs-nums span{display:flex;flex-direction:column;font-size:12px;color:var(--muted)}
+.hs-nums b{font-family:var(--display);font-size:26px;color:var(--ink);line-height:1.1}
+.hs-last{display:flex;flex-direction:column;gap:6px}
+.hs-pills{display:flex;gap:6px;flex-wrap:wrap}
+.hs-pills .pill{width:34px;height:34px;font-size:15px}
 .tog{display:flex;gap:12px;align-items:flex-start;padding:6px 0}
 .tog input{width:22px;height:22px;margin-top:2px;accent-color:var(--pine);flex:0 0 auto}
 .sheet-bg{position:fixed;inset:0;background:rgba(5,20,12,.45);z-index:15}
@@ -649,6 +663,7 @@ function render(){
   v.innerHTML=f();
   if(focusId){const el=document.getElementById(focusId);if(el&&el.tagName==="INPUT"&&el.type==="text"){el.focus();const n=el.value.length;try{el.setSelectionRange(n,n);}catch(e){}}}
   if(S.ui.lb&&S.current&&S.tab==="play"&&!S.ui.finished)v.insertAdjacentHTML("beforeend",lbSheet(S.current));else S.ui.lb=false;
+  if(S.ui.hs&&S.current&&S.tab==="play"&&!S.ui.finished)v.insertAdjacentHTML("beforeend",hsSheet(S.current));else S.ui.hs=false;
   fitView();
   if(S.ui.justAdded)setTimeout(()=>{S.ui.justAdded=null;},400);
   if(v.querySelector(".zchart"))drawCharts();
@@ -752,6 +767,38 @@ function teeOrder(c,h){
   return o;
 }
 function dispOrder(c){const t=teeOrder(c,c.hole);return prefs.sortOrder?t:c.players.map((_,i)=>i);}
+/* ---- per-hole statistics during a round (all my earlier rounds on this course) ---- */
+let HS={key:"",v:null};
+function holeStats(c,h){
+  const no=NO(c,h),key=c.courseId+"|"+no+"|"+S.rounds.length+"|"+(c.editOf||"");
+  if(HS.key===key)return HS.v;
+  const me=[],all=[];
+  doneRounds().forEach(r=>{if(r.courseId!==c.courseId||r.id===c.editOf||r.id===c.id)return;
+    const j=r.holeNos?r.holeNos.indexOf(no):no-1;if(j<0||j>=r.pars.length||r.pars[j]==null)return;
+    const mine=meOf(r);
+    r.players.forEach(p=>{const s=p.scores[j];if(s==null)return;const e={s,par:r.pars[j],d:r.date};all.push(e);if(p===mine&&mine.isMe!==false)me.push(e);});});
+  const sm=a=>{if(!a.length)return null;const cnt={eagle:0,birdie:0,par:0,bogey:0,double:0};a.forEach(e=>cnt[cls(e.s,e.par)]++);
+    return{n:a.length,avg:sum(a.map(e=>e.s))/a.length,best:Math.min(...a.map(e=>e.s)),cnt};};
+  HS={key,v:{me:sm(me),all:sm(all),last:me.slice(-10).reverse()}};return HS.v;
+}
+function hsBar(c,h){
+  const st=holeStats(c,h);
+  if(!st.all)return '<span class="hstat none">Šeit vēl neesi spēlējis</span>';
+  return '<button class="hstat" data-act="hsOpen" aria-label="Groza statistika">'+(st.me?'Tu <b>'+st.me.avg.toFixed(1)+'</b> · lab. <b>'+st.me.best+'</b> · ':'')+'visi <b>'+st.all.avg.toFixed(1)+'</b><span class="hs-more" aria-hidden="true">›</span></button>';
+}
+function hsDist(o){const t=o.n;return '<div class="hbar">'+DIST.map(([k,l])=>o.cnt[k]?'<span class="'+k+'" style="width:'+(o.cnt[k]/t*100)+'%">'+(o.cnt[k]/t>=0.12?Math.round(o.cnt[k]/t*100)+'%':'')+'</span>':'').join("")+'</div>';}
+function hsSheet(c){
+  const h=c.hole,st=holeStats(c,h),par=c.pars[h],dist=c.dists&&c.dists[h];
+  const block=(title,o,sub)=>'<section class="card stack hs-card"><div class="spread"><h2>'+title+'</h2></div>'+
+    (o?'<div class="hs-nums"><span>Vidēji<b>'+o.avg.toFixed(1)+'</b></span><span>Labākais<b>'+o.best+'</b></span><span>Reizes<b>'+o.n+'</b></span></div>'+hsDist(o):'<p class="small muted" style="margin:0">Vēl nav datu.</p>')+'</section>';
+  return '<div class="sheet-bg" data-act="hsClose"></div><div class="sheet" role="dialog" aria-label="Groza statistika"><div class="sheet-head"><b class="lbtitle">'+NO(c,h)+'. grozs · par '+par+(dist?' · '+dist+' m':'')+'</b><button class="btn primary" data-act="hsClose">Aizvērt</button></div>'+
+  '<div class="sheet-body">'+
+  block("Tavi rezultāti",st.me,"")+
+  (st.last.length?'<div class="hs-last"><span class="small muted">Pēdējās reizes</span><div class="hs-pills">'+st.last.map(e=>'<span class="pill '+cls(e.s,e.par)+'" title="'+fmtDate(e.d)+'">'+e.s+'</span>').join("")+'</div></div>':'')+
+  block("Visi spēlētāji",st.all,"")+
+  '<div class="legend">'+DIST.map(([k,l])=>'<span><i class="lg-'+k+'"></i>'+l+'</span>').join("")+'</div>'+
+  '</div></div>';
+}
 function vScoring(){
   const c=S.current,h=c.hole,par=c.pars[h],dist=c.dists&&c.dists[h];
   const me=c.players.find(p=>p.isMe)||c.players[0];
@@ -773,7 +820,7 @@ function vScoring(){
   S.ui.confirmAbort?'<div class="confirm"><span>'+(c.live&&c.ownerUid!==S.uid?'Iziet no šīs spēles? Pārējie turpinās bez tevis.':c.live&&(c.memberUids||[]).length>1?'Dzēst šo spēli visiem spēlētājiem?':'Dzēst šo spēli bez saglabāšanas?')+'</span><button class="btn danger" data-act="abortYes">'+(c.live&&c.ownerUid!==S.uid?'Iziet':'Dzēst')+'</button><button class="btn ghost" data-act="abortNo">Atcelt</button></div>':
   '<div class="sfoot"><button class="link" data-act="finishEarly">Pabeigt tagad</button><button class="link" data-act="abort">'+(c.live&&c.ownerUid!==S.uid?'Iziet no spēles':'Pārtraukt spēli')+'</button></div>';
   return '<div class="scoring'+sz+'">'+
-  '<div class="hole-head"><div class="hole-no">'+NO(c,h)+'</div><div class="hole-meta"><span class="eyebrow">'+(ed?'Labo · ':'')+esc(c.courseName)+'</span><span>Par <b>'+par+'</b>'+(dist?' · <b>'+dist+'</b> m':'')+(c.live&&(c.memberUids||[]).length>1?' <span class="livechip">● kopīga</span>':'')+'</span></div><button class="lbbtn" data-act="lbOpen" aria-label="Atvērt tabulu">Tabula <span>'+(h+1)+'/'+played+'</span></button></div>'+
+  '<div class="hole-head"><div class="hole-no">'+NO(c,h)+'</div><div class="hole-meta"><span class="eyebrow">'+(ed?'Labo · ':'')+esc(c.courseName)+'</span><span>Par <b>'+par+'</b>'+(dist?' · <b>'+dist+'</b> m':'')+(c.live&&(c.memberUids||[]).length>1?' <span class="livechip">● kopīga</span>':'')+'</span></div><button class="lbbtn" data-act="lbOpen" aria-label="Atvērt tabulu">Tabula <span>'+(h+1)+'/'+played+'</span></button>'+hsBar(c,h)+'</div>'+
   '<div class="strip" role="list">'+strip+'</div>'+
   '<div class="plist">'+rows+'</div>'+
   (miss?'<div class="warn">Nav ievadīti metieni: '+esc(miss)+'. Aizpildi tos, tad varēsi pabeigt.</div>':'')+
@@ -1257,6 +1304,8 @@ document.addEventListener("click",ev=>{
     case"nextHole":confirmHole();S.ui.missing=null;if(c.hole<c.pars.length-1)c.hole++;Store.saveCurrent();render();window.scrollTo(0,0);break;
     case"setPar":case"inc":case"dec":scoreAdj(+v,a);render();break;
     case"lbOpen":S.ui.lb=true;render();break;
+    case"hsOpen":S.ui.hs=true;render();break;
+    case"hsClose":S.ui.hs=false;render();break;
     case"lbClose":S.ui.lb=false;render();break;
     case"volSel":S.ui.volP=+v;render();break;
     case"finish":finish(false);break;
