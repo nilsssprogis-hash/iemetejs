@@ -811,7 +811,7 @@ function vScoring(){
     const s=p.scores[h];const thru=p.scores.filter(x=>x!=null).length;
     const d=sum(p.scores.map((x,i)=>x==null?0:x-c.pars[i]));
     const vt=devOK()&&prefs.vol&&volTarget()===pi;
-    return '<div class="plrow">'+(n>1?'<span class="ord'+(pos[pi]===0?' first':'')+'" aria-label="Met '+(pos[pi]+1)+'.">'+(pos[pi]+1)+'</span>':'')+'<div class="card pl'+(vt?' voltarget':'')+'"><div class="pl-info'+(devOK()&&prefs.vol?' volsel" data-act="volSel" data-v="'+pi+'"':'"')+'><div class="pl-name">'+esc(p.name)+(vt?' <span class="volbadge">▲▼</span>':'')+'</div><div class="pl-tot">'+(thru?'<b class="num">'+rel(d)+'</b> · '+thru+' gr.':'<span class="t0">vēl nav metienu</span>')+'</div></div>'+
+    return '<div class="plrow"><div class="card pl'+(vt?' voltarget':'')+'"><div class="pl-info'+(devOK()&&prefs.vol?' volsel" data-act="volSel" data-v="'+pi+'"':'"')+'><div class="pl-name">'+esc(p.name)+(vt?' <span class="volbadge">▲▼</span>':'')+'</div><div class="pl-tot">'+(thru?'<b class="num">'+rel(d)+'</b> · '+thru+' gr.':'<span class="t0">vēl nav metienu</span>')+'</div></div>'+
     '<div class="stepper"><button data-act="dec" data-v="'+pi+'" aria-label="Mazāk metienu">−</button><button class="val '+(s==null?'par':cls(s,par))+'" data-act="setPar" data-v="'+pi+'" aria-label="Metieni: '+(s==null?par+' (par, apstiprinās ar Nākamais grozs)':s)+'">'+(s==null?par:s)+'</button><button data-act="inc" data-v="'+pi+'" aria-label="Vairāk metienu">+</button></div></div></div>';
   }).join("");
   const last=h===played-1;
