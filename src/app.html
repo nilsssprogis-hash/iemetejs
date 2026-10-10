@@ -768,7 +768,7 @@ function teeOrder(c,h){
     o=o.map((i,pos)=>({i,pos})).sort((a,b)=>sc(a.i)-sc(b.i)||a.pos-b.pos).map(x=>x.i);}
   return o;
 }
-function dispOrder(c){const t=teeOrder(c,c.hole);return prefs.sortOrder?t:c.players.map((_,i)=>i);}
+function dispOrder(c){return teeOrder(c,c.hole);}
 /* ---- per-hole statistics during a round (all my earlier rounds on this course) ---- */
 let HS={key:"",v:null};
 function holeStats(c,h){
@@ -1079,7 +1079,7 @@ function vSettings(){
   const hasEx=S.courses.some(c=>c.example)||S.rounds.some(r=>r.example);
   return pageHead("Iestatījumi")+
   '<section class="card stack"><h2>Spēle un paziņojumi</h2>'+
-    '<label class="tog"><input type="checkbox" id="prefSort" data-pref="sortOrder"'+(prefs.sortOrder?' checked':'')+'><span><b>Kārtot spēlētājus metienu secībā</b><br><span class="small muted">Spēles laikā augšā būs tas, kurš met pirmais (zemākais rezultāts iepriekšējā grozā). Ja izslēgts, rindas paliek savās vietās un secību rāda numurs pie vārda.</span></span></label>'+
+
     (window.PUSH_ENABLED&&S.mode==="fb"?'<label class="tog"><input type="checkbox" id="prefNotify" data-notify="1"'+(S.profile.notify!==false?' checked':'')+'><span><b>Paziņojumi par pabeigtiem raundiem</b><br><span class="small muted">Kad draugs pabeidz kopīgu raundu, saņemsi paziņojumu ar rezultātiem — arī tad, ja Iemetējs ir aizvērts.</span></span></label>':'')+
     (devOK()?'<label class="tog"><input type="checkbox" id="prefLock" data-pref="lock"'+(prefs.lock?' checked':'')+'><span><b>Rādīt pāri bloķēšanas ekrānam</b><br><span class="small muted">Spēles laikā, ieslēdzot ekrānu, Iemetējs atveras uzreiz, bez PIN koda. Pārējais telefons paliek bloķēts.</span></span></label>'+
     '<label class="tog"><input type="checkbox" id="prefVol" data-pref="vol"'+(prefs.vol?' checked':'')+'><span><b>Skaļuma pogas kā + un −</b><br><span class="small muted">Īss spiediens: augšup = +1, lejup = −1 iezīmētajam spēlētājam. Ilgs spiediens (~0,5 s): lejup = nākamais spēlētājs, pēc pēdējā — nākamais grozs; augšup = iepriekšējais spēlētājs.</span></span></label>':'')+
