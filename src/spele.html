@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Disku golfs 3D</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+/* Pilnekrāna 3D spēle: kanvass apakšā, HUD paneļi pa virsu. Krāsas no Iemetēja: priede + groza dzeltenā */
+:root{
+  --pine:#14904f; --hero:#0e6a3d; --accent:#ffc21a; --accent-ink:#241a00;
+  --glass:rgba(8,24,15,.72); --glass-2:rgba(255,255,255,.12); --ink:#f1fbf5; --muted:#b5d3c2; --line:rgba(255,255,255,.16);
+  --birdie:#34c77e; --eagle:#5aaaf2; --bogey:#f5a04d; --double:#f06a55;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#0a1811;color:var(--ink);font-family:var(--body);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:none}
+button{font:inherit;color:inherit;border:0;cursor:pointer}
+#view{position:fixed;inset:0;width:100%;height:100%;display:block}
+.num{font-family:var(--display);font-variant-numeric:tabular-nums}
+.panel{background:var(--glass);border:1px solid var(--line);border-radius:14px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+
+.top{position:fixed;left:0;right:0;top:0;padding:calc(var(--sat) + 10px) 12px 0;display:flex;gap:8px;align-items:flex-start;pointer-events:none}
+.top>*{pointer-events:auto}
+.back{width:42px;height:42px;display:grid;place-items:center;flex:none}
+.back svg{width:20px;height:20px}
+.hole{padding:7px 12px;min-width:0}
+.hole .t{font-family:var(--display);font-weight:700;font-size:22px;line-height:1;letter-spacing:.02em}
+.hole .s{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap}
+.right{margin-left:auto;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.score{padding:7px 12px;text-align:right}
+.score .t{font-family:var(--display);font-weight:700;font-size:22px;line-height:1}
+.score .s{font-size:12px;color:var(--muted);margin-top:3px}
+.wind{display:flex;align-items:center;gap:8px;padding:6px 10px}
+.wind svg{width:26px;height:26px;transition:transform .2s}
+.wind .v{font-family:var(--display);font-weight:600;font-size:18px;line-height:1}
+.wind .l{font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+#map{display:block;width:118px;height:150px;border-radius:12px;border:1px solid var(--line);background:#16351f;transition:width .2s,height .2s}
+#map.big{width:min(78vw,340px);height:min(100vw,440px)}
+
+.marker{position:fixed;left:0;top:0;transform:translate(-50%,-100%);pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--display);font-weight:700;font-size:16px;color:#241a00;will-change:transform}
+.marker b{background:var(--accent);padding:2px 8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.marker i{width:0;height:0;border:6px solid transparent;border-top-color:var(--accent)}
+
+.toast{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;opacity:0;transition:opacity .25s}
+.toast.on{opacity:1}
+.toast .t{font-family:var(--display);font-weight:700;font-size:44px;line-height:1;text-shadow:0 3px 14px rgba(0,0,0,.6)}
+.toast .s{font-size:15px;margin-top:6px;text-shadow:0 2px 8px rgba(0,0,0,.7)}
+
+.bottom{position:fixed;left:0;right:0;bottom:0;padding:0 10px calc(var(--sab) + 10px);display:flex;flex-direction:column;gap:8px}
+.discs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px}
+.discs::-webkit-scrollbar{display:none}
+.disc{flex:none;display:flex;align-items:center;gap:7px;padding:6px 10px 6px 7px;border-radius:12px;background:var(--glass);border:1px solid var(--line);text-align:left}
+.disc .dot{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
+.disc .n{font-weight:600;font-size:13px;line-height:1.1}
+.disc .f{font-family:var(--display);font-size:13px;color:var(--muted);line-height:1.1}
+.disc[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.ctrl{display:flex;gap:8px;align-items:stretch}
+.sliders{flex:1;min-width:0;padding:8px 12px;display:flex;flex-direction:column;gap:6px}
+.sl{display:grid;grid-template-columns:62px 1fr 64px;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.sl output{font-family:var(--display);font-size:15px;color:var(--ink);text-align:right;white-space:nowrap}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;touch-action:none}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:rgba(255,255,255,.25)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;margin-top:-9px;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:rgba(255,255,255,.25)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:0}
+.seg{display:flex;gap:4px}
+.seg button{flex:1;padding:5px 0;border-radius:8px;background:var(--glass-2);font-size:12px;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#0a1811}
+.throw{width:112px;flex:none;display:flex;flex-direction:column;gap:6px}
+.meter{position:relative;height:12px;border-radius:6px;background:rgba(255,255,255,.18);overflow:hidden}
+.meter .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#34c77e,#ffc21a 80%,#f06a55)}
+.meter .mk{position:absolute;top:0;bottom:0;left:83.3%;width:2px;background:#fff;opacity:.8}
+#throwBtn{flex:1;min-height:88px;border-radius:16px;background:var(--accent);color:var(--accent-ink);font-family:var(--display);font-weight:700;font-size:22px;line-height:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:0 4px 0 #b88a00;touch-action:none}
+#throwBtn small{font-family:var(--body);font-size:11px;font-weight:600;opacity:.75}
+#throwBtn:disabled{opacity:.45}
+#throwBtn.hold{transform:translateY(3px);box-shadow:0 1px 0 #b88a00}
+.aimrow{display:flex;gap:6px}
+.aimrow button{flex:1;height:32px;border-radius:9px;background:var(--glass);border:1px solid var(--line);font-size:15px}
+.hint{text-align:center;font-size:12px;color:var(--muted);text-shadow:0 1px 4px rgba(0,0,0,.8)}
+
+.sheet{position:fixed;inset:0;background:rgba(3,10,6,.55);display:flex;align-items:flex-end;justify-content:center;padding:12px 12px calc(var(--sab) + 12px)}
+.sheet[hidden]{display:none}
+.card{width:100%;max-width:520px;max-height:calc(100% - var(--sat) - 20px);overflow:auto;background:#0f2418;border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px;touch-action:pan-y}
+.card h1{margin:0;font-family:var(--display);font-weight:700;font-size:34px;line-height:1}
+.card h2{margin:0;font-family:var(--display);font-weight:600;font-size:20px}
+.card p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.big{font-family:var(--display);font-weight:700;font-size:64px;line-height:.9}
+.btn{border-radius:12px;padding:13px 18px;font-weight:600;background:var(--glass-2);min-height:48px}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row .btn{flex:1}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:6px 4px;text-align:center;border-bottom:1px solid var(--line)}
+th{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.05em}
+td.n{text-align:left}
+.sc{display:inline-grid;place-items:center;min-width:28px;height:28px;border-radius:8px;font-family:var(--display);font-weight:700;font-size:17px}
+.sc.e{background:var(--eagle);color:#04121f}.sc.b{background:var(--birdie);color:#03130a}.sc.p{background:rgba(255,255,255,.12)}.sc.o{background:var(--bogey);color:#241200}.sc.d{background:var(--double);color:#200400}
+.tips{margin:0;padding-left:18px;color:var(--muted);font-size:14px;line-height:1.5}
+.tips b{color:var(--ink)}
+.loading{position:fixed;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:22px;color:var(--muted);background:#0a1811}
+@media (min-width:760px){.bottom{left:50%;transform:translateX(-50%);width:640px}}
+@media (max-height:560px){#throwBtn{min-height:64px}.sliders{padding:4px 10px;gap:2px}#map{height:110px}}
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div class="loading" id="loading">Gatavo laukumu…</div>
+
+<div class="top">
+  <button class="panel back" id="backBtn" aria-label="Atpakaļ uz Iemetēju"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <div class="panel hole"><div class="t" id="holeT">Grozs 1</div><div class="s" id="holeS">Par 3 · 80 m</div></div>
+  <div class="right">
+    <div class="panel score"><div class="t num" id="scoreT">E</div><div class="s" id="scoreS">Metieni: 0</div></div>
+    <div class="panel wind" aria-label="Vējš"><svg id="windArrow" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V4M6 10l6-6 6 6"/></svg><div><div class="v num" id="windV">0 m/s</div><div class="l" id="windL">vējš</div></div></div>
+    <canvas id="map" width="236" height="300" aria-label="Groza karte (pieskaries, lai palielinātu)"></canvas>
+  </div>
+</div>
+
+<div class="marker" id="marker"><b id="markerD">0 m</b><i></i></div>
+<div class="toast" id="toast"><div class="t" id="toastT"></div><div class="s" id="toastS"></div></div>
+
+<div class="bottom" id="bottom">
+  <div class="hint" id="hint">Velc pa ekrānu, lai tēmētu · turi pogu un atlaid</div>
+  <div class="discs" id="discs"></div>
+  <div class="ctrl">
+    <div class="panel sliders">
+      <div class="seg" id="style"><button data-h="1" aria-pressed="true">Bekhends</button><button data-h="-1" aria-pressed="false">Forhends</button></div>
+      <label class="sl">Leņķis<input type="range" id="hyzer" min="-40" max="40" step="1" value="0"><output id="hyzerO">plakans</output></label>
+      <label class="sl">Augstums<input type="range" id="elev" min="0" max="22" step="1" value="8"><output id="elevO">8°</output></label>
+      <div class="aimrow"><button id="aimL" aria-label="Tēmēt pa kreisi">◀</button><button id="aimC" aria-label="Tēmēt uz grozu">◎ grozs</button><button id="aimR" aria-label="Tēmēt pa labi">▶</button></div>
+    </div>
+    <div class="throw">
+      <div class="meter"><div class="fill" id="fill"></div><div class="mk"></div></div>
+      <button id="throwBtn">MEST<small id="throwSub">turi un atlaid</small></button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheet" hidden><div class="card" id="sheetCard"></div></div>
+
+<script>window.addEventListener("error",function(e){var l=document.getElementById("loading");if(l)l.textContent="Neizdevās palaist 3D: "+e.message;});</script>
+<script src="spele.js"></script>
+</body>
+</html>

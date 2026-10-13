@@ -24,6 +24,7 @@ uzbūvē APK un publicē to kā jaunu laidienu.
 
 - `src/app.html` — visa lietotne (viens HTML fails)
 - `src/native.js` — glabāšana telefonā un eksports caur Android kopīgošanu
+- `src/spele.html`, `src/spele.js` — 3D disku golfa spēle (Three.js, iebūvēts ar esbuild; atveras no sadaļas *Spēle*)
 - `scripts/build-www.mjs` — sagatavo `www/` ar lokāliem fontiem
 - `assets/` — ikona un sākuma ekrāns
 - `signing/debug.keystore` — parakstīšanas atslēga, lai atjauninājumi uzstādītos pāri vecajai versijai
