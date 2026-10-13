@@ -3,6 +3,7 @@
 // - pievieno HTML karkasu un src/native.js
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { buildSync } from "esbuild";
 
 const root = new URL("..", import.meta.url).pathname;
 const www = join(root, "www");
@@ -45,4 +46,8 @@ const head = `<!doctype html><html lang="lv"><head><meta charset="utf-8">
 </head><body>
 `;
 writeFileSync(join(www, "index.html"), head + app + "\n</body></html>\n");
+
+// Disku golfa 3D spēle: atsevišķa lapa, Three.js iebūvēts (darbojas bez interneta)
+copyFileSync(join(root, "src", "spele.html"), join(www, "spele.html"));
+buildSync({ entryPoints: [join(root, "src", "spele.js")], bundle: true, minify: true, format: "iife", target: "es2020", outfile: join(www, "spele.js"), logLevel: "warning" });
 console.log("www/ gatavs");

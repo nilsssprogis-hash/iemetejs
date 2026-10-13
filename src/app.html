@@ -741,6 +741,7 @@ function vPlay(){
   (S.ui.hideAsk?'<div class="confirm"><span>Noņemt “'+esc(S.ui.hideAsk)+'” no ieteiktajiem spēlētājiem? Vecie rezultāti paliks.</span><button class="btn danger" data-act="hideYes">Noņemt</button><button class="btn ghost" data-act="hideNo">Atcelt</button></div>':'')+
   (S.mode==="fb"&&S.profile.pid?'<p class="small muted" style="margin:0">Tavs spēlētāja ID: <b class="num" style="font-size:17px;color:var(--ink)">#'+esc(S.profile.pid)+'</b> — pasaki to draugiem, lai viņi tevi pievienotu.</p>':'')+'</section>'+
   (S.ui.addOpen?addSheet():'')+
+  '<a class="card spread" href="spele.html" style="text-decoration:none;color:inherit"><span><b>Disku golfs 3D</b><br><span class="muted small">Treniņu spēle — 9 grozi, vējš un reālistisks diska lidojums</span></span><span class="btn accent" style="display:inline-flex;align-items:center">Spēlēt</span></a>'+
   '<div class="actionbar"><button class="btn primary wide" data-act="start" style="min-height:54px;font-size:17px">Sākt spēli</button></div>';
 }
 function roster(pls,addBtn){
